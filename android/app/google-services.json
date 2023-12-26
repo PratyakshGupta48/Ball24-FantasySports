@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "988673347500",
+    "project_id": "ball-24",
+    "storage_bucket": "ball-24.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:988673347500:android:b988671c9d4a2fca503409",
+        "android_client_info": {
+          "package_name": "com.ball24"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "988673347500-qnjvnpar6ai4r24i4eh5sv993pkc44e7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ball24",
+            "certificate_hash": "7ccf4178bb9c5ad2d6341887c2fd640e94db8a11"
+          }
+        },
+        {
+          "client_id": "988673347500-qru550amiou1qn7eo0irgfgk3sn9pc18.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGSX-46qBoS-ehQ00VmuMfmFaZIikG9T8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "988673347500-qru550amiou1qn7eo0irgfgk3sn9pc18.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
