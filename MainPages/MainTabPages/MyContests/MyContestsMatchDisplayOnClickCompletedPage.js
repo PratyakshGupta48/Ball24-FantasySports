@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, FlatList, TouchableWithoutFeedback,LayoutAnimation, UIManager, Platform} from 'react-native'
+import { StyleSheet, Text, View, FlatList, TouchableWithoutFeedback,LayoutAnimation, UIManager, Platform, Image} from 'react-native'
 import React,{useEffect,useState,useCallback,useRef} from 'react';
 import {useRoute} from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
@@ -8,6 +8,8 @@ import { height,width } from '../../../Dimensions';
 import BottomSheet , {BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 import SkeletonContent, { SkeletonOneLiner} from '../../../SkeletonPlaceholder';
 import BallViewCompleted from './BallViewCompleted';
+import HeaderBlank from '../../../Headers/HeaderBlank';
+import FastImage from 'react-native-fast-image';
 
 const size = Math.floor((width-34)/45);
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -34,27 +36,13 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
   const [refresh,setRefresh] = useState(false)
   const [selectedItemIndex, setSelectedItemIndex] = useState(-1);
   const [ballViewData,setBallViewData] = useState(["",[]]);
+  const [scoreData,setScoreData] = useState(null);
   const sheetRef1 = useRef(null);
 
   const openBottomSheet1 = useCallback((index) => {if(sheetRef1.current) sheetRef1.current.snapToIndex(index);},[]);
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0}/>)
-
-  //   mainFunction().then(({ contestDetails, contestSetsData }) => {
-  //     console.log(contestDetails)
-  //     const totalWinningAmount = contestSetsData.flat().filter(item => item.WinningAmount !== undefined).reduce((sum, item) => sum + item.WinningAmount, 0);
-  //     const numberOfArrays = contestSetsData.filter(innerArray =>
-  //       innerArray.some(item => item.WinningAmount !== undefined)
-  //     ).length;
-  //     setContestData(contestDetails);
-  //     setContestSetsData(contestSetsData);
-  //     setTotalWinnings(totalWinningAmount);
-  //     setTotaWinningsContests(numberOfArrays);
-  //    }).finally(() => {
-  //     setLoadingSpinner(false);
-  //   });
-  // }, [refresh]);
-
-  useEffect(()=>{
+  useEffect(() => {if (scoreData||selectedItemIndex) LayoutAnimation.configureNext(customLayoutAnimation);}, [scoreData,selectedItemIndex]);
+  useEffect(()=>{ 
     const fetchData = async () => {
       setLoadingSpinner(true);
       const contestsSnapshot = await firestore().collection('users').doc(uid).collection('MyContests').doc(MatchId).collection('Contests').get();
@@ -70,9 +58,37 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
       );
       setContestData(arr);
       setLoadingSpinner(false);
+      let totalWinningAmount = 0;
+      let num = 0;
+      const promises = contestsSnapshot.docs.map(async (documentSnapshot) => {
+        const query = await firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(documentSnapshot.id).collection('Participants').where('uid', '==', uid).get();
+        query.forEach((documentSnapshot) => {
+          if (documentSnapshot.data().WinningAmount) {
+            totalWinningAmount += documentSnapshot.data().WinningAmount;
+            num += 1;
+          }
+        });
+      });
+      await Promise.all(promises);
+      setTotalWinnings(totalWinningAmount);
+      setTotaWinningsContests(num);
     };
     fetchData()
-  },[])
+  },[refresh]);
+  useEffect(()=>{
+    if (MatchLink!=undefined) {
+      async function fetchScore() {
+        try {
+          const response = await fetch('https://get-cricket-score.vercel.app/score?url=' + MatchLink);
+          const data = await response.json();
+          setScoreData(data);
+        } catch (e) {
+          // fetchScore();
+        }
+      }
+      fetchScore();
+    }
+  },[refresh])
 
   const RenderExtendedList = useCallback(({MatchKey}) => {
     const [ContestSetsData,setContestSetsData] = useState([]);
@@ -106,7 +122,6 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
     const RenderItem = ({item}) => {
       const navigateToBallView = () => {
         const totalRuns = (item.Set).reduce((acc, val) => acc + (isNaN(parseInt(val)) ? 0 : parseInt(val[0])), 0)
-        console.log(item)
         setBallViewData([item.SetName,item.Set,totalRuns,item.Points,item.Rank,item.PointsArray])
         openBottomSheet1(0);
       };
@@ -142,7 +157,7 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
 
   const RenderItem = ({item,index}) => {
     const isItemSelected = selectedItemIndex === index; 
-    const navigationLeaderboard = () => navigation.navigate('ContestDetailNavigation',{refresh:()=>{setRefresh(!refresh)},Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.DocumentId,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDisplay',Inning:item.Inning})
+    const navigationLeaderboard = () => navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.DocumentId,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDisplay',Inning:item.Inning})
     return(
       <View style={styles.Card}>
         <TouchableWithoutFeedback onPress={navigationLeaderboard} style={{backgroundColor:'transparent'}}><View>
@@ -189,7 +204,37 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
       </View>
     )
   }
+
   return (<>
+  <HeaderBlank Heading={TeamCode1 +' vs '+TeamCode2} navigation={()=>{navigation.goBack()}}/>
+  {scoreData!=null && <View style={{backgroundColor:'#1a1a1a',flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingBottom:5}}>
+    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+      <View style={{alignItems:'flex-start'}}>
+        <Text style={styles.LSTeamName}>{scoreData.Team1}</Text>
+        <View style={styles.LSImageScoreContainer}>
+          <FastImage source={{uri:I1}} style={styles.TeamLogoOne}/>
+          {scoreData.Score1!=" " && <><Text style={[styles.ScoreDataCurrentText,{marginLeft:10}]}>{(scoreData.Score1).slice(0,(scoreData.Score1).indexOf('(')-1)}</Text>
+          <Text style={[styles.LSOverText,{marginLeft:5}]}>{(scoreData.Score1).slice((scoreData.Score1).indexOf('('))}</Text></>}
+          {scoreData.Score1==" " && <Text style={[styles.ScoreDataCurrentText,{marginLeft:10}]}>Yet to bat</Text>}
+        </View>
+      </View>  
+      <View style={{alignItems:'flex-end'}}>
+        <Text style={styles.LSTeamName}>{scoreData.Team2}</Text>
+        <View style={styles.LSImageScoreContainer}>
+          {scoreData.Score2!=" " && <><Text style={[styles.LSOverText,{marginRight:5}]}>{(scoreData.Score2).slice((scoreData.Score2).indexOf('('))}</Text>
+          <Text style={[styles.ScoreDataCurrentText,{marginRight:10}]}>{(scoreData.Score2).slice(0,(scoreData.Score2).indexOf('(')-1)}</Text></>}
+          {scoreData.Score2==" " && <Text style={[styles.ScoreDataCurrentText,{marginRight:10}]}>Yet to bat</Text>}
+          <FastImage source={{uri:I2}} style={styles.TeamLogoOne}/>
+        </View>  
+      </View>  
+    </View>
+    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:-10}}>
+      <Text style={{color:'#109e00',fontFamily:'Poppins-SemiBold'}}>● </Text>
+      <Text style={styles.LSStatusText}>{'Completed'}</Text>
+    </View>
+    <Text style={styles.LSConclusionText}>{scoreData.Status}</Text>
+  </View>}
+    
   {loadingSpinner?<View style={{flex:1,backgroundColor:'#ffffff',paddingTop:12}}><SkeletonContent/></View>:(<>
     <FlatList
       style={{flex:1,backgroundColor:'#ffffff',marginBottom:5}}
@@ -202,9 +247,9 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
       getItemLayout={(data,index) => ({length: 200, offset: 200* index, index})}
       ListHeaderComponent={()=>(
         TotalWinningContests>=1 && <View style={styles.TotalWinningsContainer}>
-          <Text style={styles.TotalWinningsCongoText}>Congratulations! You've won in {TotalWinningContests>1?(TotalWinningContests+' contests 🎉.'):TotalWinningContests+' contest 🎉.'} </Text>
+          <Text style={styles.TotalWinningsCongoText}>You've won in {TotalWinningContests>1?(TotalWinningContests+' contests 🎉.'):TotalWinningContests+' contest 🎉.'} </Text>
           <View style={styles.ImageMoneyContainer}>
-            <Image width={55} source={require('../../../accessories/DreamBallLogos/logoblue.png')} style={styles.Logo} ></Image>
+            <Image source={require('../../../accessories/DreamBallLogos/logoblue.png')} style={styles.Logo} ></Image>
             <Text style={styles.TotalWinningsText}>{' ₹'+TotalWinnings}</Text>
           </View>
         </View>
@@ -230,7 +275,6 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
 const styles = StyleSheet.create({
   TotalWinningsContainer:{
     flexDirection:'column',
-    backgroundColor:'#f6f7fb',
     marginHorizontal:15,
     paddingTop:10
   },
@@ -420,5 +464,47 @@ const styles = StyleSheet.create({
     borderRadius:3,
     marginLeft:3,
     fontSize:12
+  },
+  Logo:{
+    width:60,
+    height:40
+  },
+  TeamLogoOne:{
+    width:33,
+    height:33
+  },
+  LSTeamName:{
+    color:'#a4a4a4',
+    fontFamily:'Poppins-Medium',
+    fontSize:11.5,
+    letterSpacing:-0.3
+  },
+  LSImageScoreContainer:{
+    flexDirection:'row',
+    alignItems:'center',
+  },
+  ScoreDataCurrentText:{
+    color:'#ababab',
+    fontFamily:'Poppins-SemiBold',
+    fontSize:18,
+    marginTop:3
+  },
+  LSOverText:{
+    color:'#a4a4a4',
+    fontFamily:'Poppins-Medium',
+    fontSize:12,
+    marginTop:3
+  },
+  LSStatusText:{
+    color:'#fafbff',
+    fontFamily:'Poppins-SemiBold',
+    fontSize:12
+  },
+  LSConclusionText:{
+    color:'#fafbff',
+    fontFamily:'Poppins-Regular',
+    alignSelf:'center',
+    fontSize:12,
+    paddingBottom:5
   },
 })

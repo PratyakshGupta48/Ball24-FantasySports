@@ -212,15 +212,13 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
               <View style={styles.DeadlineContestContaioner}>{item.Refunded ? <Text style={styles.RefundedText}>• Refunded</Text>: <Text style={styles.LiveText}>• Live</Text>}</View>
             </>}
             {item.ContestStatus=='Upcoming' && <View style={styles.DeadlineContestContaioner}>
-            <View style={styles.DeadlineContestIconContaioner}>
-              <Icon name='clock-fast' size={18} color='#1141c1'/>
-            </View>
-            <View style={styles.WinningMoneyContainer}>
-              <Text style={styles.DeadlineOverText}>{item.Overs>1?"Deadline "+(item.Overs-1):" Match Start"}</Text>
-              {item.Overs>1 && <Text style={{marginBottom:10,color:'#1141c1',fontFamily:'Poppins-Medium',fontSize:8}}>th</Text>}
-              {item.Overs>1 && <Text style={styles.DeadlineOverText}> over</Text>}
-            </View>
-          </View>}
+              <Icon name='clock-fast' size={18} color='#1141c1' style={{marginRight:3}}/>
+              <View style={styles.WinningMoneyContainer}>
+                <Text style={styles.DeadlineOverText}>{item.Overs>1?"Deadline "+(item.Overs-1):" Match Start"}</Text>
+                {item.Overs>1 && <Text style={{marginBottom:10,color:'#1141c1',fontFamily:'Poppins-Medium',fontSize:8}}>th</Text>}
+                {item.Overs>1 && <Text style={styles.DeadlineOverText}> over</Text>}
+              </View>
+            </View>}
           </View></View>
         </TouchableWithoutFeedback>
         <View style={styles.JoinedWithTextContainer}>

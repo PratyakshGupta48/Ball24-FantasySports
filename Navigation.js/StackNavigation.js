@@ -28,7 +28,7 @@ import Withdraw from '../MainPages/MainTabPages/Withdraw';
 import Withdraw_BankAccount from '../MainPages/MainTabPages/Withdraw_BankAccount';
 import ContestDetailLeaderboard from '../MainPages/ContestDetailLeaderboard';
 import LiveLeaderboard from '../MainPages/MainTabPages/MyContests/LiveLeaderboard';
-import CompletedLeaderboard from '../MainPages/MainTabPages/MyContests/CompletedLeaderboard';
+// import CompletedLeaderboard from '../MainPages/MainTabPages/MyContests/CompletedLeaderboard';
 import Notification from '../MainPages/Notification';
 import HelpAndSuppport from '../MainPages/MainDrawerPages/HelpAndSuppport';
 import Home from '../MainPages/Home';
@@ -153,7 +153,7 @@ function MainStackNavigation(){
       <Stack.Screen name='LiveLeaderboard' component={LiveLeaderboard} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
       <Stack.Screen name='ScreenForMyContestTabNavigator' component={ScreenForMyContestTabNavigator} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
       <Stack.Screen name='MyMatchCompleted' component={MyContestsMatchDisplayOnClickCompletedPage} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
-      <Stack.Screen name='CompletedLeaderboard' component={CompletedLeaderboard} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
+      {/* <Stack.Screen name='CompletedLeaderboard' component={CompletedLeaderboard} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/> */}
       <Stack.Screen name='AddEmail' component={AddEmail} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
       <Stack.Screen name='ReferAndWinExtension' component={ReferAndWinExtension} options={{headerShown:false,animation:'fade'}}/>
       <Stack.Screen name='Withdraw' component={Withdraw} options={{headerShown:false,animation:'fade'}}/>

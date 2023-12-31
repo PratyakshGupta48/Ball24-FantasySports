@@ -21,7 +21,7 @@ const customLayoutAnimation = {
 
 export default function LiveLeaderboard() {
 
-  const {MatchId,MatchKey,uid,TeamCode1,TeamCode2} = useRoute().params;
+  const {MatchId,MatchKey,uid,TeamCode1,TeamCode2,contestStatus} = useRoute().params;
   const [isModalVisible,setIsModalVisible] = useState(false);
   const [userSetName,setUserSetName] = useState()
   const [userSet,setUserSet] = useState([])
@@ -59,6 +59,7 @@ export default function LiveLeaderboard() {
           PointsArray: participantData.Points,
           Rank: participantData.Rank,
           WinningMessage: participantData.WinningMessage,
+          WinningAmount:participantData.WinningAmount,
           Set: participantSetDoc.data()[setNumber],
         });
         newLastItem = documentSnapshot;
@@ -81,6 +82,7 @@ export default function LiveLeaderboard() {
           PointsArray: documentSnapshot.data().Points,
           Rank: documentSnapshot.data().Rank,
           WinningMessage: documentSnapshot.data().WinningMessage,
+          WinningAmount:documentSnapshot.data().WinningAmount,
           My: true,
           Set: document.data()[documentSnapshot.data().SetNumber],
         });
@@ -111,6 +113,7 @@ export default function LiveLeaderboard() {
           PointsArray: participantData.Points,
           Rank: participantData.Rank,
           WinningMessage: participantData.WinningMessage,
+          WinningAmount:participantData.WinningAmount,
           Set: participantSetDoc.data()[setNumber],
         });
         newLastItem = documentSnapshot;
@@ -140,7 +143,8 @@ export default function LiveLeaderboard() {
             <Text style={styles.LeaderBoardItemName}>{item.Name}</Text>
             <Text style={styles.setName}>{item.SetName}</Text>
           </View>
-          {item.WinningMessage==='In Winning Zone' && <Text style={styles.WinningMessageText}>{item.WinningMessage}</Text>}
+          {contestStatus=='L' && item.WinningMessage==='In Winning Zone' && <Text style={styles.WinningMessageText}>{item.WinningMessage}</Text>}
+          {contestStatus=='C' && item.WinningAmount && <Text style={styles.WinningMessageText}>Won Rs {item.WinningAmount}</Text>}
         </View>
       </View>
       <View style={styles.PointRankTextContainer}>
@@ -227,7 +231,7 @@ const styles = StyleSheet.create({
     color:"#008006",
     fontFamily:'Poppins-Regular',
     fontSize:12,
-    paddingLeft:15
+    paddingLeft:20
   },
   PointRankTextContainer:{
     width:'30%',

@@ -7,7 +7,7 @@ import ScreenForMyContestTabNavigator from './ScreenForMyContestTabNavigator';
 
 const Tab = createMaterialTopTabNavigator();
 
-export default function MyContestsTabNavigator({navigation}) {
+export default function MyContestsTabNavigator() {
 
   return (<>
     <LinearGradient colors={['#1141c1', '#002487']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.container}>
