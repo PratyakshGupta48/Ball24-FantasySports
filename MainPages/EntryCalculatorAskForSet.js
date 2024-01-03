@@ -41,7 +41,6 @@ export default function EntryCalculatorAskForSet({AskForSet,MatchId,TeamCode1,Te
           else repeatHandler()
         }
         if(!Contest && Free==true && AskForSet.length===1){
-          console.log('ssss')
           repeatHandler()
           setDBCashBonusUsable(0)
         }

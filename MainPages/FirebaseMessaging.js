@@ -19,7 +19,7 @@ async function GetFCMToken () {
 
 export const NotificationListener = () => {
 //   messaging().onNotificationOpenedApp(remoteMessage => {
-//     // console.log('Notification caused app to open from background state:',remoteMessage.notification,);
+//     // ('Notification caused app to open from background state:',remoteMessage.notification,);
 //   });
       
 //   messaging().getInitialNotification().then(remoteMessage => {

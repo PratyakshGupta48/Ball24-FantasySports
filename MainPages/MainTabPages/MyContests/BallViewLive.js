@@ -10,7 +10,6 @@ const TextEq = {"0":'Zero',"1":'One',"2":'Two',"3":'Three',"4":'Four',"5":'Five'
 function BallViewLive({name,userSetName,lockStatus,navigation,TeamCode1,TeamCode2,totalRuns,userset,status,Points,PointsArray}) {
   const size = useMemo(() => Math.floor((width - 34) / 45), []);
   let ctr = 0;
-
   const userSet = userset.flatMap(Object.values);
 
   return (<>

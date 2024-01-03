@@ -1,41 +1,29 @@
-import {View,Text,StyleSheet,TouchableWithoutFeedback,FlatList,ActivityIndicator,LayoutAnimation, UIManager, Platform,} from 'react-native';
-import React,{useCallback,useEffect,useState} from 'react';
+import {View,Text,StyleSheet,TouchableWithoutFeedback,FlatList,ActivityIndicator} from 'react-native';
+import React,{useCallback,useEffect,useState,useRef} from 'react';
 import { useRoute } from '@react-navigation/native';
 import {width} from '../../../Dimensions';
 import firestore from '@react-native-firebase/firestore'; 
 import FastImage from 'react-native-fast-image';
 import BallViewLive from './BallViewLive';
-import Modal from "react-native-modal";
+import {BottomSheetBackdrop,BottomSheetModal,} from '@gorhom/bottom-sheet';
 
-if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
-const customLayoutAnimation = {
-  duration: 250,
-  create: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.opacity,
-  },
-  update: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-  },
-};
+const size = Math.floor((width-34)/45);
 
 export default function LiveLeaderboard() {
-
   const {MatchId,MatchKey,uid,TeamCode1,TeamCode2,contestStatus} = useRoute().params;
-  const [isModalVisible,setIsModalVisible] = useState(false);
-  const [userSetName,setUserSetName] = useState()
-  const [userSet,setUserSet] = useState([])
-  const [totalRuns,setTotalRuns] = useState()
-  const [Points,setPoints] = useState(null)
-  const [PointsArray,setPointsArray] = useState(null)
-  const [Name,setName] = useState();
+  let BallViewCompleted;
+  if (contestStatus === 'C') BallViewCompleted = require('./BallViewCompleted').default;
+  const [ballViewData,setBallViewData] = useState(["",[]]);
   const [filledSpots,setFilledSpots] = useState();
   const [mySize,setMySize] = useState(null)
   const [LeaderboardData,setLeaderboardData] = useState([]);
   const [lastItem,setLastItem] = useState();
   const [refresh,setRefresh] = useState(false);
 
-  useEffect(() => {if (isModalVisible||!isModalVisible) LayoutAnimation.configureNext(customLayoutAnimation);}, [isModalVisible]);
+  const sheetRef1 = useRef(null);
+  const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0}/>)
+  const handlePresentModalPress = useCallback(() => {sheetRef1.current?.present();}, []);
+
   useEffect(() => {
     const unsubscricbe1 = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).onSnapshot((documentSnapshot) => setFilledSpots(documentSnapshot.data().FilledSpots));
     const myData = [];
@@ -94,7 +82,7 @@ export default function LiveLeaderboard() {
     return () => unsubscricbe1;
   }, [refresh]);
   
-  const LeaderboardFinalData = async () => {
+  const LeaderboardFinalData =React.memo( async () => {
     if (lastItem) {
       const querySnapshot = await firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).collection('Participants').orderBy('PointsNumber', 'desc').startAfter(lastItem).limit(8).get();
       const finalLeaderboardData = [];
@@ -122,18 +110,13 @@ export default function LiveLeaderboard() {
       else setLastItem(null)
       setLeaderboardData([...LeaderboardData, ...finalLeaderboardData]);
     }
-  };
+  });
 
   const RenderItem = useCallback(({item})=>
     <TouchableWithoutFeedback onPress={()=>{
-      const totalRuns = (item.Set).reduce((acc, val) => acc + (isNaN(parseInt(val)) ? 0 : parseInt(val[0])), 0)
-      setUserSetName(item.SetName);
-      setUserSet(item.Set);
-      setTotalRuns(totalRuns);
-      setPoints(item.Points);
-      setPointsArray(item.PointsArray);
-      setName(item.Name)
-      setIsModalVisible(true);
+      const totalRuns = (item.Set).reduce((acc, val) => acc + (isNaN(parseInt(val)) ? 0 : parseInt(val[0])), 0);
+      setBallViewData([item.SetName,item.Set,totalRuns,item.Points,item.Rank,item.PointsArray,item.Name]);
+      handlePresentModalPress()
     }}>
     <View style={item.My?[styles.LeaderBoardItemContainer,{backgroundColor:'#e3f4fa'}]:styles.LeaderBoardItemContainer}>
       <View style={styles.ProfileNameSetContainer}>
@@ -169,16 +152,16 @@ export default function LiveLeaderboard() {
       </View>
     </View>
     <View style={styles.Line}></View>
-    </>
+    </>,[]
   );
-  const ListFooterComponent = useCallback(()=> <ActivityIndicator color="#969696" size="small" animating={true} />);
+  const ListFooterComponent = useCallback(()=> <ActivityIndicator color="#969696" size="small" animating={true} />,[]);
 
   return (<>
     <FlatList
       style={{backgroundColor:'#ffffff',flex:1}}
       data={LeaderboardData}
       onEndReachedThreshold={1}
-      onEndReached={LeaderboardFinalData}
+      onEndReached={lastItem && LeaderboardFinalData}
       renderItem={RenderItem}
       ListHeaderComponent={filledSpots>0 && ListHeaderComponent}
       ListFooterComponent={lastItem && ListFooterComponent}
@@ -188,9 +171,17 @@ export default function LiveLeaderboard() {
       onRefresh={()=>{setRefresh(!refresh)}}
       maxToRenderPerBatch={9}
     />
-    <Modal isVisible={isModalVisible} animationIn={'slideInUp'} animationInTiming={300} animationOut={'slideOutDown'} animationOutTiming={300} backdropOpacity={0.5} onBackdropPress={()=>{setIsModalVisible(false)}} hideModalContentWhileAnimating={true} style={{justifyContent: 'flex-end',margin: 0,}}>
-      <BallViewLive status={'Live'} Points={Points} PointsArray={PointsArray} name={Name} userSetName={userSetName} userset={userSet} lockStatus={true} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={totalRuns} navigation={()=>{null}}/>
-    </Modal>
+    <BottomSheetModal
+      ref={sheetRef1}
+      index={1}
+      snapPoints={['25%','50%']}
+      backdropComponent={renderBackdrop}
+      handleStyle={{position:'absolute',alignSelf:'center'}}
+      handleIndicatorStyle={{backgroundColor:'#ffffff'}}
+      backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
+        {contestStatus==='L' && ballViewData[0] && <BallViewLive status={'Live'} Points={ballViewData[3]} PointsArray={ballViewData[5]} name={ballViewData[6]} userSetName={ballViewData[0]} userset={ballViewData[1]} lockStatus={true} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={ballViewData[2]} navigation={()=>{null}}/>}
+        {contestStatus==='C'&&ballViewData[0] && <BallViewCompleted Points={ballViewData[3]} Rank={ballViewData[4]} PointsArray={ballViewData[5]} name={ballViewData[6]} userSetName={ballViewData[0]} userSet={ballViewData[1].flatMap(Object.values)} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={ballViewData[2]}/>}
+    </BottomSheetModal>
   </>)
 }
 

@@ -69,7 +69,6 @@ function ContestSelection({navigation}) {
   }, []);
   useEffect(()=>{
     if ((status == 'Live' || status == 'Upcoming') && MatchLink!=undefined) {
-      console.log('hello')
       async function fetchScore() {
         try {
           const response = await fetch('https://get-cricket-score.vercel.app/score?url=' + MatchLink);

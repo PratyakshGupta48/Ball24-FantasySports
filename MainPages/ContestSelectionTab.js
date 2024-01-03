@@ -91,7 +91,7 @@ export default function ContestSelectionTab({navigation}) {
       const userListener = firestore().collection('users').doc(uid).onSnapshot((documentSnapshot) => {
         setNewUser(documentSnapshot.data().Contest);
       });
-      return () => { getContest(); userListener(); console.log('returned')};
+      return () => { getContest(); userListener();};
     }, 500);
   }, [refresh]);
   

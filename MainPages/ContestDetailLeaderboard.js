@@ -60,7 +60,6 @@ export default function ContestDetailLeaderboard() {
           Set: document.data()[documentSnapshot.data().SetNumber],
         });
       });
-      console.log(myData)
       setLeaderboardData([...myData, ...initialData]);
       setMySize(querySnapshot.size);
     };
@@ -120,7 +119,7 @@ export default function ContestDetailLeaderboard() {
       style={{backgroundColor:'#ffffff',flex:1}}
       data={LeaderboardData}
       onEndReachedThreshold={1}
-      onEndReached={LeaderboardFinalData}
+      onEndReached={lastItem && LeaderboardFinalData}
       renderItem={RenderItem}
       ListHeaderComponent={filledSpots>0 && ListHeaderComponent}
       ListFooterComponent={lastItem && ListFooterComponent}

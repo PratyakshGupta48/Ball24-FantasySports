@@ -10,7 +10,6 @@ const TextEq = {"0":'Zero',"1":'One',"2":'Two',"3":'Three',"4":'Four',"5":'Five'
 function BallViewCompleted({name,userSetName,TeamCode1,TeamCode2,totalRuns,userSet,Points,PointsArray}) {
   const size = useMemo(() => Math.floor((width - 34) / 45), []);
   let ctr = 0;
-
   return (<>
   <View style={{height:500}}>
     <View style={styles.BallViewMainContainer}>
@@ -34,7 +33,6 @@ function BallViewCompleted({name,userSetName,TeamCode1,TeamCode2,totalRuns,userS
             <Text style={styles.BallsLeftBallsText}>/6</Text>
           </View>
         </View>
-        <Text style={styles.BallViewNameText}>{TeamCode1+'  v/s  '+TeamCode2}</Text>
         <Text style={[styles.BallViewNameText,{fontSize:14.5,borderBottomWidth:0.6,borderBottomColor:'#dedede',paddingHorizontal:10}]}>{'Points: '+Points+'  ,  Rank: 1'}</Text>
         <View style={[styles.BallLeftMainContainer,{alignItems:'flex-end',}]}>
           <Text style={styles.BallsLeftBallsText}>Runs </Text>

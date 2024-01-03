@@ -61,7 +61,7 @@ export default function AskForSetPage({navigation}) {
         return prevIsPriceModalFixed;
       });
     })
-    return () => {participantsListener();listener2();console.log('returned')}
+    return () => {participantsListener();listener2();}
   }, [refresh]);
 
   const renderItem = useCallback(({item,index})=>{

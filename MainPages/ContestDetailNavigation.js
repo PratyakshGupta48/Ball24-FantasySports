@@ -8,7 +8,7 @@ import ContestDisplay from './ContestDetails';
 import AskForSetPage from './AskForSetPage';
 import BallSelection from './BallSelection';
 import { height } from '../Dimensions';
-import BottomSheet , {BottomSheetBackdrop} from '@gorhom/bottom-sheet';
+import BottomSheet , {BottomSheetBackdrop,BottomSheetModalProvider} from '@gorhom/bottom-sheet';
 import WalletBottomSheet from './MainTabPages/WalletBottomSheet';
 import Toast from 'react-native-toast-message';
 
@@ -36,6 +36,7 @@ export default function ContestDetailNavigation({navigation}) {
 
   return (
     <>
+    <BottomSheetModalProvider>
     <StatusBar animated={true} backgroundColor="#000000"/>
     <Header_ContestSelection navigation={()=>{navigation.pop()}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId} status={status} ContestStatus={Conteststatus} Overs={Overs}  WalletFunction={()=>{openBottomSheet()}}/>
     <Stack.Navigator initialRouteName={initialScreen}>
@@ -55,6 +56,7 @@ export default function ContestDetailNavigation({navigation}) {
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
         <WalletBottomSheet navigation={()=>navigation.navigate('AddCash')}/>
     </BottomSheet>
+    </BottomSheetModalProvider>
     <Toast/>
     </>
   )

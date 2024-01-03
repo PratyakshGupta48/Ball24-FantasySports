@@ -540,7 +540,6 @@ exports.assignWonAmount = onDocumentWritten({maxInstances:10 ,document:"AllMatch
       const uniqueRanks = Array.from(new Set(ranks));
       uniqueRanks.forEach((rank) => {
         const prizeMoney = winnings.find(item => item.Start < rank && item.End >= rank).PrizeMoney;
-        console.log(prizeMoney)
         const sameRankDocs = rankDistribution[rank];   
         const winningAmount = sameRankDocs.length > 1 ? prizeMoney / sameRankDocs.length : prizeMoney;
         sameRankDocs.forEach(async (docRef) => {

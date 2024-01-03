@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View ,TextInput ,ActivityIndicator ,StatusBar,Image,Animated,TouchableOpacity, LayoutAnimation, UIManager, Platform} from 'react-native'
+import { StyleSheet, Text, View ,TextInput ,ActivityIndicator ,StatusBar,Image,TouchableOpacity, LayoutAnimation, UIManager, Platform} from 'react-native'
 import React, { useState ,useEffect ,useRef} from 'react'
 import HeaderBlank from '../../Headers/HeaderBlank'
 import {height,width} from '../../Dimensions';
@@ -8,12 +8,11 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import auth from '@react-native-firebase/auth';
 import {useRoute} from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 
 export default function AddCash({navigation}) {
 
   const [inputValue,setInputValue] = useState(useRoute().params?useRoute().params.add:'₹150')
-  const [validationError,setValidationError] = useState(null);
-  const [AnimatedVisible,setAnimatedVisible] = useState(false);
   const [phoneNumber,setphoneNumber] = useState(null)
   const [loadingSpinner,setLoadingSpinner] = useState(true);
   const [settingUp,setSettingUp] = useState(false);
@@ -22,13 +21,8 @@ export default function AddCash({navigation}) {
   const [DBCashBonus,setDBCashBonus] = useState(null);
   const [expanded, setExpanded] = useState(false);
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const fade = (vError) => {
-    setValidationError(vError)
-    setAnimatedVisible(true)
-    Animated.timing(fadeAnim, {toValue: 1,useNativeDriver: true ,duration:300}).start();
-    setTimeout(() => {Animated.timing(fadeAnim, {toValue: 0,duration: 300,useNativeDriver: true }).start(); setAnimatedVisible(false)}, 1500)
-  }
+  const showToast = (type,text1,text2) => Toast.show({type: type,text1: text1,visibilityTime:2500,position:'top',topOffset:0,text2: text2});
+
 
   useEffect(()=>{
     setLoadingSpinner(false)
@@ -49,16 +43,15 @@ export default function AddCash({navigation}) {
     if(input.match(/^(?:[5-9]|[1-9]\d{1,3}|25000)$/)){
       setLoadingSpinner(true)
       setSettingUp(true);
-      setValidationError(null);
       const startTransaction = functions().httpsCallable('Transaction');
       startTransaction({amount:input,uid:auth().currentUser.uid,phone:phoneNumber}).then(async res=>{
         if(res.data.code == "PAYMENT_INITIATED") navigation.navigate('PaymentGateway',{url:res.data.data.instrumentResponse.redirectInfo.url})
-        else console.log("Something went wrong! Please try again later")
+        else showToast('error','Something went wrong!','Hold tight.Our best engineers are onto it.');
       })
     }
-    else if(input<5) fade('Minimum amount that can be added is ₹5')
-    else if(input>25000) fade('Maximum amount that can be added is ₹25000')
-    else fade('Invalid Amount entered')
+    else if(input<5) showToast('info','Minimum deposit amount is ₹5','Please retry.');
+    else if(input>25000) showToast('info','Maximum deposit amount is ₹25000','Please retry');
+    else showToast('info','Invalid Amount','Please enter valid amount and retry');
   }
   
   const handleAmountChange = (text) => {
@@ -71,10 +64,6 @@ export default function AddCash({navigation}) {
   return (<>
     <StatusBar animated={true} backgroundColor="#121212"/>
     <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Add cash'}/>
-    <Animated.View style={[styles.CopiedContainer,{opacity:fadeAnim,display:AnimatedVisible?'flex':'none'}]}>
-      <Icon name='information-outline' size={23} color='#ffffff' style={{marginRight:10}}/>
-      <Text style={styles.validationErrorText}>{validationError}</Text>
-    </Animated.View>
     <View style={{backgroundColor:'#ffffff'}}>
       <View style={styles.CurrentBalanceContainer}>
         <View style={styles.Row}>
@@ -153,7 +142,9 @@ export default function AddCash({navigation}) {
       animating={true}
       style={styles.ActivityIndicator}
      />{settingUp && <Text style={styles.SettingUp}>Redirecting to payments ....</Text>}
-    </>}</>
+    </>}
+    <Toast/>
+    </>
   )
 }
 
@@ -183,7 +174,8 @@ const styles = StyleSheet.create({
     paddingVertical:20,
     flexDirection:'row',
     alignItems:'center',
-    justifyContent:'space-evenly'
+    justifyContent:'space-evenly',
+    height:80
   },
   TextInputContainer:{
     borderBottomColor:'#009e00',
@@ -238,23 +230,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#ffffff',
     opacity: 1,
-  },
-  CopiedContainer:{
-    alignItems:'center',
-    position:'absolute',
-    flexDirection:'row',
-    justifyContent:'center',
-    backgroundColor:'#ff6700',
-    width:width,
-    height:48,
-    zIndex:10,
-    marginTop:10
-  },
-  validationErrorText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    marginTop:3,
   },
   GSTDetailsContainer:{
     backgroundColor:'#ffffff',

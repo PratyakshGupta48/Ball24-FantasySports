@@ -12,7 +12,6 @@ import {height,width} from '../Dimensions';
 import SkeletonContent from '../SkeletonPlaceholder';
 
 export default function Home({navigation}) {
-
   const isFocused = useIsFocused();
   const uid = auth().currentUser.uid;
   const [refresh,setRefresh] = useState(false);
