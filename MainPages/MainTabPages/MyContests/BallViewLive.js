@@ -11,7 +11,7 @@ function BallViewLive({name,userSetName,lockStatus,navigation,TeamCode1,TeamCode
   const size = useMemo(() => Math.floor((width - 34) / 45), []);
   let ctr = 0;
   const userSet = userset.flatMap(Object.values);
-
+  
   return (<>
   <View style={{height:500}}>
     <View style={styles.BallViewMainContainer}>

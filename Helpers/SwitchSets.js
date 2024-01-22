@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, FlatList, TouchableWithoutFeedback,ActivityIndicator, ImageBackground, ScrollView} from 'react-native'
+import { StyleSheet, Text, View, FlatList, TouchableWithoutFeedback,ImageBackground, ScrollView,LayoutAnimation, UIManager, Platform} from 'react-native'
 import React,{useEffect,useState,useCallback} from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore';
@@ -8,6 +8,17 @@ import functions from '@react-native-firebase/functions';
 
 const colors = {"0":'#006269',"1":'#006269',"2":'#006269',"3":'#006269',"4":'#1e8e3e',"5":'#006269',"6":'#1e8e3e',"1WD":'#185ccc',"1NB":'#185ccc',"2NB":'#185ccc',"3NB":'#185ccc',"4NB":'#185ccc',"5NB":'#185ccc',"7NB":'#185ccc',"W":'#d93025'}
 const skip = ["1WD","1NB","2NB","3NB","4NB","5NB","7NB"];
+if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
+const customLayoutAnimation = {
+  duration: 250,
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  update: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+  },
+};
 
 export default function SwitchSets({MatchId,uid,MatchKey,disableRefresh,oldSet,Id}) {
 
@@ -15,7 +26,8 @@ export default function SwitchSets({MatchId,uid,MatchKey,disableRefresh,oldSet,I
   const [selectedItemIndex,setSelectedItemIndex] = useState(-1);
   const [loadingSpinner,setLoadingSpinner] = useState(true);
   const [textVisible,setTextVisible] = useState(false);
-      
+  
+  useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation)}, [setsData,textVisible]);
   useEffect(()=>{
     setTimeout(() => {
       firestore().collection('AllMatches').doc(MatchId).collection('ParticipantsWithTheirSets').doc(uid).get().then(documentSnapshot => {
@@ -80,7 +92,7 @@ export default function SwitchSets({MatchId,uid,MatchKey,disableRefresh,oldSet,I
   return (
     <View style={styles.UsePreviousMainContainer} elevation={3}>
       {loadingSpinner ? (<View style={{ backgroundColor: '#ffffff' }}><SkeletonOneBoxer/></View>) : (<>
-        {!textVisible && <Text style={styles.SelectText}>{setsData.length > 0 ? 'Switch Set' : 'Create more sets first'}</Text>}
+        {!textVisible && <Text style={styles.SelectText}>{setsData.length > 0 ? 'Switch Set' : 'No Avilable Sets Found'}</Text>}
         {!textVisible && <FlatList
           data={setsData}
           renderItem={renderItem}
@@ -181,14 +193,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 15,
-    borderColor: '#a1a1a1',
-    borderWidth: 0.4,
-    opacity: 0.99,
+    // borderColor: '#a1a1a1',
+    // borderWidth: 0.4,
+    // opacity: 0.99,
   },
   NextButtonText: {
     textAlign: 'center',
     backgroundColor: '#b8b8b8',
-    borderRadius: 6,
+    borderRadius: 4,
     color: 'white',
     fontFamily: 'Poppins-SemiBold',
     fontSize: 16,

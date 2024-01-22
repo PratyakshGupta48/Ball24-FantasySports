@@ -9,7 +9,7 @@ export default function HowToPlay({navigation}) {
     <>
       <StatusBar animated={true} backgroundColor="#000000"/>
 
-      <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'How To Play '}/>
+      <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'How To Play '} color='#1a1a1a'/>
 
       <ScrollView>
         <View style={styles.MainWholeContainer}>

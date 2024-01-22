@@ -3,11 +3,18 @@ import React,{useEffect,useState,useCallback } from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore';
 
-export default function Header_ContestSelection({navigation,TeamCode1,TeamCode2,Matchid,status,ContestStatus,Overs,special,WalletFunction}) {
+export default function Header_ContestSelection({navigation,navigation2,TeamCode1,TeamCode2,Matchid,MatchKey,Overs,special,WalletFunction}) {
 
   const [MatchTime,setMatchTime] = useState(null);
+  const [status,setStatus] = useState();
+  const [ContestStatus,setContestStatus] = useState();
+  
   useEffect(()=>{
-    firestore().collection('AllMatches').doc(Matchid).onSnapshot(documentSnapshot=>setMatchTime(documentSnapshot.data().MatchTime))
+    const db = firestore().collection('AllMatches').doc(Matchid);
+    const unsubscribe = db.onSnapshot(documentSnapshot=>{setMatchTime(documentSnapshot.data().MatchTime);setStatus(documentSnapshot.data().Status)});
+    let unsubscribe2;
+    if(MatchKey) unsubscribe2 = db.collection('4oversContests').doc(MatchKey).onSnapshot((document) => {setContestStatus(document.data().ContestStatus);});
+    return ()=>{unsubscribe();if(unsubscribe2)unsubscribe2()};
   },[]);
 
   const TimeLeftComponent = useCallback(({milliseconds})=>{
@@ -37,8 +44,8 @@ export default function Header_ContestSelection({navigation,TeamCode1,TeamCode2,
         </View>
       </View>
       <View style={{flexDirection:'row',alignItems:"center"}}>
-        <Icon name='help-circle-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={()=>{WalletFunction()}}/>
-        <Icon name='bell-plus-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={()=>{WalletFunction()}}/>
+        <Icon name='help-circle-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={navigation2}/>
+        {/* <Icon name='bell-plus-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={()=>{WalletFunction()}}/> */}
         <Icon name='wallet-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={()=>{WalletFunction()}}/>
       </View>
     </View>

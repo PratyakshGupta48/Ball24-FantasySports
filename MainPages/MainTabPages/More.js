@@ -6,7 +6,7 @@ import HeaderBlank from '../../Headers/HeaderBlank';
 export default function More({navigation}) {
   return (<>
   <StatusBar animated={true} backgroundColor="#000000"/>
-  <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'More'}/>
+  <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'More'} color='#1a1a1a'/>
   <ScrollView style={styles.MainWholeContainer}>
     <TouchableWithoutFeedback onPress={()=>{navigation.navigate('HowToPlay')}}>
       <View style={styles.AboutUscardContainer} elevation={3}>

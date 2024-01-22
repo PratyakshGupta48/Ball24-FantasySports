@@ -155,9 +155,19 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
     </>)
   },[])
 
+  const listHeaderComponent = useCallback(()=>
+    TotalWinningContests>=1 && <View style={styles.TotalWinningsContainer}>
+      <Text style={styles.TotalWinningsCongoText}>You've won in {TotalWinningContests>1?(TotalWinningContests+' contests 🎉.'):TotalWinningContests+' contest 🎉.'} </Text>
+      <View style={styles.ImageMoneyContainer}>
+        <Image source={require('../../../accessories/DreamBallLogos/logoblue.png')} style={styles.Logo} ></Image>
+        <Text style={styles.TotalWinningsText}>{' ₹'+TotalWinnings}</Text>
+      </View>
+    </View>
+  ,[TotalWinningContests])
+
   const RenderItem = ({item,index}) => {
     const isItemSelected = selectedItemIndex === index; 
-    const navigationLeaderboard = () => navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.DocumentId,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDisplay',Inning:item.Inning})
+    const navigationLeaderboard = () => navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.DocumentId,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDetails',Inning:item.Inning})
     return(
       <View style={styles.Card}>
         <TouchableWithoutFeedback onPress={navigationLeaderboard} style={{backgroundColor:'transparent'}}><View>
@@ -206,7 +216,7 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
   }
 
   return (<>
-  <HeaderBlank Heading={TeamCode1 +' vs '+TeamCode2} navigation={()=>{navigation.goBack()}}/>
+  <HeaderBlank Heading={TeamCode1 +' vs '+TeamCode2} navigation={()=>{navigation.goBack()}} color='#1a1a1a'/>
   {scoreData!=null && <View style={{backgroundColor:'#1a1a1a',flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingBottom:5}}>
     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
       <View style={{alignItems:'flex-start'}}>
@@ -245,15 +255,7 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
       renderItem={RenderItem}
       initialNumToRender={7}
       getItemLayout={(data,index) => ({length: 200, offset: 200* index, index})}
-      ListHeaderComponent={()=>(
-        TotalWinningContests>=1 && <View style={styles.TotalWinningsContainer}>
-          <Text style={styles.TotalWinningsCongoText}>You've won in {TotalWinningContests>1?(TotalWinningContests+' contests 🎉.'):TotalWinningContests+' contest 🎉.'} </Text>
-          <View style={styles.ImageMoneyContainer}>
-            <Image source={require('../../../accessories/DreamBallLogos/logoblue.png')} style={styles.Logo} ></Image>
-            <Text style={styles.TotalWinningsText}>{' ₹'+TotalWinnings}</Text>
-          </View>
-        </View>
-      )}
+      ListHeaderComponent={listHeaderComponent}
       maxToRenderPerBatch={5}
     />
     <BottomSheet

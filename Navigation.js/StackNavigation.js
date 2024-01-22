@@ -1,5 +1,5 @@
 import React from 'react';
-import {Dimensions, View,Text,StyleSheet,Image} from 'react-native';
+import {Dimensions, View,Text,StyleSheet,Image,StatusBar} from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -25,10 +25,8 @@ import BallViewCompleted from '../MainPages/MainTabPages/MyContests/BallViewComp
 import AddEmail from '../MainPages/MainTabPages/AddEmail';
 import ReferAndWinExtension from '../MainPages/MainTabPages/ReferAndWinExtension';
 import Withdraw from '../MainPages/MainTabPages/Withdraw';
-import Withdraw_BankAccount from '../MainPages/MainTabPages/Withdraw_BankAccount';
 import ContestDetailLeaderboard from '../MainPages/ContestDetailLeaderboard';
 import LiveLeaderboard from '../MainPages/MainTabPages/MyContests/LiveLeaderboard';
-// import CompletedLeaderboard from '../MainPages/MainTabPages/MyContests/CompletedLeaderboard';
 import Notification from '../MainPages/Notification';
 import HelpAndSuppport from '../MainPages/MainDrawerPages/HelpAndSuppport';
 import Home from '../MainPages/Home';
@@ -38,8 +36,12 @@ import Header_Home from '../Headers/Header_Home';
 import PaymentGateway from '../MainPages/MainTabPages/PaymentGateway';
 import MyContestsMatchDisplayOnClickCompletedPage from '../MainPages/MainTabPages/MyContests/MyContestsMatchDisplayOnClickCompletedPage'
 import ScreenForMyContestTabNavigator from '../MainPages/MainTabPages/MyContests/ScreenForMyContestTabNavigator';
+import WebViewForRules from '../MainPages/WebViewForRules';
 
 import ContestDetailNavigation from '../MainPages/ContestDetailNavigation';
+
+import Toast from 'react-native-toast-message';
+
 
 const width = Dimensions.get('window').width;
 
@@ -49,6 +51,7 @@ const Stack = createNativeStackNavigator();
 
 function MainTabNavigator({navigation}) {
   return (<>
+    <StatusBar animated={true} backgroundColor='#002487'/>
     <Header_Home navigation={()=>{navigation.openDrawer()}} navigation2={()=>{navigation.navigate('Notification')}}/>
     <Tab.Navigator initialRouteName='Home' screenOptions={{tabBarShowLabel:false,tabBarStyle:{height:56}}}>
       <Tab.Screen name='Home' component={Home} options={{headerShown:false,tabBarIcon:({focused})=>(
@@ -139,13 +142,13 @@ function MainDrawernavigation() {
 
 function MainStackNavigation(){
   return(
-    <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle: { backgroundColor: '#ffffff' }, }}>
+    <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle: { backgroundColor: '#ffffff' },}}>
     {/* <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle:{backgroundColor:'#ffffff'}}}> */}
       <Stack.Screen name='ContestSelection' component={ContestSelection} options={{headerShown:false,detachPreviousScreen:true,animation:'slide_from_right',headerMode:'screen'}}/>
-      <Stack.Screen name='ContestDetailNavigation' component={ContestDetailNavigation} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen',detachPreviousScreen:true}}/>
+      <Stack.Screen name='ContestDetailNavigation' component={ContestDetailNavigation} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen'}}/>
 
       <Stack.Screen name='Drawer' component={MainDrawernavigation} options={{headerShown:false,detachPreviousScreen:true,headerMode:'screen',animation:'fade'}}/>
-      <Stack.Screen name='AddCash' component={AddCash} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
+      <Stack.Screen name='AddCash' component={AddCash} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen'}}/>
       <Stack.Screen name='PaymentGateway' component={PaymentGateway} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
       <Stack.Screen name='Transactions' component={Transactions} options={{headerShown:false,animation:'fade'}}/>
       <Stack.Screen name='SetCreator' component={SetCreator} options={{headerShown:false,detachPreviousScreen:true,animation:'fade',headerMode:'screen'}}/>
@@ -153,12 +156,11 @@ function MainStackNavigation(){
       <Stack.Screen name='LiveLeaderboard' component={LiveLeaderboard} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
       <Stack.Screen name='ScreenForMyContestTabNavigator' component={ScreenForMyContestTabNavigator} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
       <Stack.Screen name='MyMatchCompleted' component={MyContestsMatchDisplayOnClickCompletedPage} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
-      {/* <Stack.Screen name='CompletedLeaderboard' component={CompletedLeaderboard} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/> */}
       <Stack.Screen name='AddEmail' component={AddEmail} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
       <Stack.Screen name='ReferAndWinExtension' component={ReferAndWinExtension} options={{headerShown:false,animation:'fade'}}/>
       <Stack.Screen name='Withdraw' component={Withdraw} options={{headerShown:false,animation:'fade'}}/>
-      <Stack.Screen name='Withdraw_BankAccount' component={Withdraw_BankAccount} options={{headerShown:false,animation:'fade'}}/>
       <Stack.Screen name='Notification' component={Notification} options={{headerShown:false,animation:'fade'}}/>
+      <Stack.Screen name='WebViewRules' component={WebViewForRules} options={{headerShown:false,animation:'fade'}}/>
       
       <Stack.Screen name='BallEdit' component={BallEditPage} options={{headerShown:false,animation:'fade'}}/>
       <Stack.Screen name='BallViewCompleted' component={BallViewCompleted} options={{headerShown:false,animation:'fade_from_bottom'}}/>
@@ -170,12 +172,14 @@ function MainStackNavigation(){
 
 function StackNavigation(){
   const user = auth().currentUser;
-  return(
-    <Stack.Navigator screenOptions={{contentStyle:{backgroundColor:'#ffffff'}}}>
+  return(<>
+    <Stack.Navigator screenOptions={{contentStyle:{backgroundColor:'#ffffff'},orientation:'portrait'}} >
       <Stack.Screen name='RegOrLog' component={RegOrLog} options={{headerShown:false,animation:'fade'}}/>
       {(!user || !user.displayName) &&<Stack.Screen name='Authentication' component={Authentication} options={{headerShown:false,animation:'slide_from_right'}}/>}
       <Stack.Screen name='MainStackNavigation' component={MainStackNavigation} options={{headerShown:false,animation:'slide_from_right',detachPreviousScreen:true}} />
     </Stack.Navigator>
+    <Toast/>
+    </>
   )
 }
 

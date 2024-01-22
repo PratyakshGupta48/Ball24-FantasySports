@@ -16,20 +16,3 @@ async function GetFCMToken () {
     if(fcmtoken) await AsyncStorage.setItem("fcmtoken",fcmtoken);
   }
 }
-
-export const NotificationListener = () => {
-//   messaging().onNotificationOpenedApp(remoteMessage => {
-//     // ('Notification caused app to open from background state:',remoteMessage.notification,);
-//   });
-      
-//   messaging().getInitialNotification().then(remoteMessage => {
-//     if (remoteMessage) {
-//     //   console.log('Notification caused app to open from quit state:',remoteMessage.notification,);
-//     }
-//   });
-
-//   messaging().onMessage(async remoteMessage => {
-//     // console.log('Message on foreground state',remoteMessage)
-//   })
-}
-

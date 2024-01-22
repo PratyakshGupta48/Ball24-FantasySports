@@ -16,7 +16,7 @@ export default function HelpAndSuppport({navigation}) {
 
   return (<>
   <StatusBar animated={true} backgroundColor="#000000"/>
-  <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Help & Support'}/>
+  <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Help & Support'} color='#1a1a1a'/>
   <View style={styles.WholeMainContainer}>
     <View style={styles.MainCardContainer} elevation={3}>
       <Text style={styles.ContactUsText}>CONTACT US :</Text>

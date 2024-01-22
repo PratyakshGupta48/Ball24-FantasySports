@@ -1,17 +1,19 @@
 import {View,Text,StyleSheet,TouchableWithoutFeedback,FlatList,ActivityIndicator} from 'react-native';
-import React,{useEffect,useState,useCallback} from 'react';
+import React,{useEffect,useState,useCallback,useRef} from 'react';
 import { useRoute } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore'; 
-import { width } from '../Dimensions';
+import { width, height } from '../Dimensions';
 import FastImage from 'react-native-fast-image';
-import Modal from "react-native-modal";
 import BallViewLive from './MainTabPages/MyContests/BallViewLive';
 import Toast from 'react-native-toast-message';
+import {BottomSheetModal,BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 
 export default function ContestDetailLeaderboard() {
 
+  const sheetRef1 = useRef(null);
+  const handlePresentModalPress = useCallback(() => {sheetRef1.current?.present();}, []);
+  const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0}/>);
   const {MatchId,MatchKey,uid,TeamCode1,TeamCode2} = useRoute().params;
-  const [isModalVisible,setIsModalVisible] = useState(false);
   const [userSetName,setUserSetName] = useState();
   const [userSet,setUserSet] = useState([]);
   const [totalRuns,setTotalRuns] = useState();
@@ -24,7 +26,7 @@ export default function ContestDetailLeaderboard() {
   const showToast = (type,text1,text2) => Toast.show({type: type,text1: text1,visibilityTime:2500,position:'top',topOffset:20,text2: text2});
 
   useEffect(()=>{
-    const unsubscricbe1 = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).get().then(documentSnapshot=>setFilledSpots(documentSnapshot.data().FilledSpots))
+    firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).get().then(documentSnapshot=>setFilledSpots(documentSnapshot.data().FilledSpots))
     let initialData;
     const fetchInitialData = async () => {
       const querySnapshot = await firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).collection('Participants').where('uid','!=',uid).orderBy('uid').limit(8).get();
@@ -64,7 +66,6 @@ export default function ContestDetailLeaderboard() {
       setMySize(querySnapshot.size);
     };
     fetchMyData();
-    return () => unsubscricbe1;
   },[refresh])
 
   const LeaderboardFinalData = async () => {
@@ -92,7 +93,7 @@ export default function ContestDetailLeaderboard() {
         setUserSet(item.Set)
         setTotalRuns(totalRuns)
         setName(item.Name)
-        setIsModalVisible(true)
+        handlePresentModalPress()
       }
       else showToast('info', 'Contest Not Live Yet', 'You can view other participants\' sets when the contest is live.');
     }}>
@@ -109,8 +110,8 @@ export default function ContestDetailLeaderboard() {
       {mySize!=null && mySize!=0 && <Text style={styles.TotalSetsText}>{'You have joined with '+mySize+' sets'}</Text>}
     </View>
     <View style={styles.Line}></View>
-    </>
-  )
+    </>,[filledSpots,mySize]
+  );
   const ListFooterComponent = useCallback(()=> <ActivityIndicator color="#969696" size="small" animating={true} />)
   const ListEmptyComponent = useCallback(()=><View style={{flex:1,backgroundColor:'#ffffff'}}><Text style={{fontFamily:'Poppins-Medium',color:'#969696',fontSize:15,textAlign:'center',marginTop:30}}>No other sets have joined the contest</Text></View>,[])
 
@@ -130,11 +131,15 @@ export default function ContestDetailLeaderboard() {
       onRefresh={()=>{setRefresh(!refresh)}}
       maxToRenderPerBatch={9}
     />
-    <Modal isVisible={isModalVisible} animationIn={'slideInUp'} animationInTiming={300} animationOut={'slideOutDown'} animationOutTiming={300} backdropOpacity={0.5} onBackdropPress={()=>{setIsModalVisible(false)}} hideModalContentWhileAnimating={true} style={{justifyContent: 'flex-end',margin: 0,}}>
-      {/* BallViewLive because of flatlist issues */}
+    <BottomSheetModal
+       ref={sheetRef1}
+       snapPoints={[50000/height+'%']}
+       backdropComponent={renderBackdrop}
+       handleStyle={{position:'absolute',alignSelf:'center'}}
+       handleIndicatorStyle={{backgroundColor:'#ffffff'}}
+       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
       <BallViewLive status={'upcoming'} Points={null} PointsArray={null} name={Name} userSetName={userSetName} userset={userSet} lockStatus={true} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={totalRuns} navigation={()=>{null}}/>
-    </Modal>
-    <Toast/>
+    </BottomSheetModal>
     </>
   )
 }

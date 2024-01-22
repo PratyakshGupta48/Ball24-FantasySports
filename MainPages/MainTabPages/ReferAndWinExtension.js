@@ -51,7 +51,7 @@ export default function Transactions({navigation}) {
 
   return (<>
     <StatusBar animated={true} backgroundColor="#121212"/>
-    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Redeem History'}/>
+    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Redeem History'} color='#1a1a1a'/>
     {loadingSpinner?<View style={{flex:1,backgroundColor:'#ffffff'}}><SkeletonContent/></View>:
       <FlatList
         data={Transactions}

@@ -13,7 +13,7 @@ export default function Feedback({navigation}) {
 
   return (<>
     <StatusBar animated={true} backgroundColor="#000000"/>
-    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Feedback'}/>
+    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Feedback'} color='#1a1a1a'/>
     <ScrollView style={styles.MainWholeContainer}>
       <View style={styles.MainCardComponent} elevation={3}>
         <Text style={styles.Tagline}>Help us Shape a New Era of Fantasy Cricket</Text>

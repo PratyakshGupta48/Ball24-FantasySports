@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, FlatList, TouchableWithoutFeedback,LayoutAnimation, UIManager, Platform} from 'react-native'
 import React,{useEffect,useState,useCallback,useRef} from 'react';
-import {useRoute} from '@react-navigation/native';
+import {useFocusEffect, useRoute} from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore';
@@ -42,48 +42,56 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
   const [oldSet,setOldSet] = useState(null);
   const [ballViewData,setBallViewData] = useState(["",[]]);
   const sheetRef1 = useRef(null);
+  const sheetRef2 = useRef(null);
 
   const openBottomSheet1 = useCallback((index) => {if(sheetRef1.current) sheetRef1.current.snapToIndex(index);},[]);
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0}/>)
+  const handlePresentModalPress = useCallback(() => {sheetRef2.current?.present();}, []);
+  const handleClosePress = () => sheetRef2.current.close()
 
-  useEffect(() => {if(isModalVisible||!isModalVisible||selectedItemIndex)LayoutAnimation.configureNext(customLayoutAnimation)}, [selectedItemIndex,isModalVisible]);
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoadingSpinner(true);
-      setIsModalVisible(false);
-      const contestsSnapshot = await firestore().collection('users').doc(uid).collection('MyContests').doc(MatchId).collection('Contests').get();
-      const arr = [];
-      await Promise.all(
-        contestsSnapshot.docs.map(async (documentSnapshot) => {
-          const contestDoc = await firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(documentSnapshot.id).get();
-          arr.push({
-            ...contestDoc.data(),
-            Count: documentSnapshot.data().Count,
-          });
-        })
-      );
-      setContestData(arr);
-      setLoadingSpinner(false);
-    };
-    fetchData()
-    const unsubscribe2 = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').onSnapshot((querySnapshot) => {
-      querySnapshot.docChanges().forEach((change) => {
-        if (change.type === 'modified' && change.doc.exists) {
-          const contestData = change.doc.data();
-          if (contestData.ContestStatus === 'Live' && ContestData.find(item=> item.DocumentId === contestData.DocumentId)) {
-            setRefresh(!refresh)
-            setIsModalVisible(false)
-            sheetRef1.current?.close();
+  useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation)}, [selectedItemIndex,isModalVisible,loadingSpinner]);
+  useFocusEffect(
+    useCallback(() => {
+      setSelectedItemIndex(-1)
+      const fetchData = async () => {
+        setLoadingSpinner(true);
+        setIsModalVisible(false);
+        const contestsSnapshot = await firestore().collection('users').doc(uid).collection('MyContests').doc(MatchId).collection('Contests').get();
+        const arr = [];
+        await Promise.all(
+          contestsSnapshot.docs.map(async (documentSnapshot) => {
+            const contestDoc = await firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(documentSnapshot.id).get();
+            arr.push({
+              ...contestDoc.data(),
+              Count: documentSnapshot.data().Count,
+            });
+          })
+        );
+        setContestData(arr);
+        setLoadingSpinner(false);
+      };
+      fetchData()
+      const unsubscribe2 = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').onSnapshot((querySnapshot) => {
+        querySnapshot.docChanges().forEach((change) => {
+          if (change.type === 'modified' && change.doc.exists) {
+            const contestData = change.doc.data();
+            if (contestData.ContestStatus === 'Live' && ContestData.find(item=> item.DocumentId === contestData.DocumentId)) {
+              setRefresh(!refresh)
+              setIsModalVisible(false)
+              handleClosePress()
+              sheetRef1.current?.close();
+            }
           }
-        }
+        });
       });
-    });
-    return () => unsubscribe2();
-  }, [refresh]);
+      return () => unsubscribe2
+    }, [refresh])
+  )
 
   const RenderExtendedList = useCallback(({MatchKey,ContestStatus}) => {
     const [ContestSetsData,setContestSetsData] = useState([]);
     const [loading,setLoading] = useState(true);
+    useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation)}, [ContestSetsData,loading]);
     useEffect(() => {
       const main = async () => {
         const SetDetails = [];
@@ -129,9 +137,10 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
         setBallViewData([item.SetName,item.Set,totalRuns,item.Points,item.Rank,item.PointsArray,item.Lock,ContestStatus==='Upcoming'?'Upcoming':'Live'])
         openBottomSheet1(0);
       };
-      const navigateToBallEdit = () => navigation.navigate('BallEdit', { MatchId, TeamCode1, TeamCode2, Set: item.Set, uid, I1, I2, SetName: item.SetName});
+      const navigateToBallEdit = () => navigation.navigate('BallEdit', { MatchId, TeamCode1, TeamCode2, uid, I1, I2, SetName: item.SetName});
       const showModal = () => {
         setIsModalVisible(true);
+        handlePresentModalPress()
         setId(item.id);
         setMatchKey(MatchKey);
         setOldSet(item.SetName);
@@ -173,7 +182,7 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
 
   const RenderItem = ({item,index}) => {
     const isItemSelected = selectedItemIndex === index; 
-    const navigationLeaderboard = () => navigation.navigate('ContestDetailNavigation',{refresh:()=>{setRefresh(!refresh)},Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.DocumentId,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDisplay',Inning:item.Inning})
+    const navigationLeaderboard = () => navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.DocumentId,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDetails',Inning:item.Inning})
     return(
       <View style={styles.Card}>
         <TouchableWithoutFeedback onPress={navigationLeaderboard} style={{backgroundColor:'transparent'}}><View>
@@ -244,11 +253,13 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
       ListEmptyComponent={()=>(loadingSpinner==false && <View style={{alignItems:'center',justifyContent:'center',flexDirection:'column',paddingTop:30}}>
         <FastImage source={require('../../../accessories/DreamBallLogos/71bqZiF2kiL._SL1500_.jpg')} style={{width:width-100,height:width-100}}/>
         <Text style={{color:'#666666',textAlign:'center',fontFamily:'Poppins-Medium',fontSize:13,marginBottom:23,marginTop:-10}}>You haven't joined any contest yet! {"\n"}Start your journey of winning here</Text>
-        <Text style={{paddingHorizontal:40,color:'#ffffff',backgroundColor:'#009e00',paddingVertical:7,fontFamily:'Poppins-Medium',borderRadius:8,fontSize:17}} onPress={()=>{navigation.navigate('Contests')}}>Explore Contests</Text>
+        <Text style={{paddingHorizontal:40,color:'#ffffff',backgroundColor:'#009e00',paddingVertical:7,fontFamily:'Poppins-Medium',borderRadius:8,fontSize:17}} onPress={()=>{navigation.jumpTo('Contests')}}>Explore Contests</Text>
       </View>)}
       maxToRenderPerBatch={5}
     />
-    <Modal isVisible={isModalVisible} animationIn={'slideInUp'} animationInTiming={350} animationOut={'slideOutDown'} animationOutTiming={350} backdropOpacity={0.5} onBackdropPress={()=>{setIsModalVisible(false)}} hideModalContentWhileAnimating={true} ><SwitchSets MatchId={MatchId} uid={uid} MatchKey={MatchKey} oldSet={oldSet} Id={Id} disableRefresh={()=>{setTimeout(()=>{setIsModalVisible(false);setRefresh(!refresh);}, 1500);}}/></Modal>
+    <Modal isVisible={isModalVisible} animationIn={'slideInUp'} animationInTiming={350} animationOut={'slideOutDown'} animationOutTiming={350} backdropOpacity={0.5} onBackdropPress={()=>{setIsModalVisible(false)}} hideModalContentWhileAnimating={true} >
+      <SwitchSets MatchId={MatchId} uid={uid} MatchKey={MatchKey} oldSet={oldSet} Id={Id} disableRefresh={()=>{setTimeout(()=>{setIsModalVisible(false);setRefresh(!refresh);}, 1500);}}/>
+    </Modal>
     <BottomSheet
       ref={sheetRef1}
       snapPoints={[(ballViewData[1].length>size?( (ballViewData[7]=='Upcoming')?55400/height+'%':58000/height+'%'):47500/height+'%')]}
@@ -259,7 +270,7 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
       handleStyle={{position:'absolute',alignSelf:'center'}}
       handleIndicatorStyle={{backgroundColor:'#ffffff'}}
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
-        <BallView status={ballViewData[7]} Points={ballViewData[3]} Rank={ballViewData[4]} PointsArray={ballViewData[5]} name={Name} userSetName={ballViewData[0]} userSet={ballViewData[1]} lockStatus={ballViewData[6]} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={ballViewData[2]} navigation={()=>{navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,Set:ballViewData[1],uid:uid,I1:I1,I2:I2,SetName:ballViewData[0]})}}/>
+        <BallView status={ballViewData[7]} Points={ballViewData[3]} Rank={ballViewData[4]} PointsArray={ballViewData[5]} name={Name} userSetName={ballViewData[0]} userSet={ballViewData[1]} lockStatus={ballViewData[6]} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={ballViewData[2]} navigation={()=>{navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,uid:uid,I1:I1,I2:I2,SetName:ballViewData[0]})}}/>
     </BottomSheet>
   </>)}
   </>)      

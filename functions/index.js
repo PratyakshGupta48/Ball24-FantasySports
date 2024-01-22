@@ -1,7 +1,7 @@
 const {initializeApp} = require("firebase-admin/app");
 initializeApp();
 const {onRequest} = require("firebase-functions/v2/https");
-const {onDocumentCreated,onDocumentWritten, Change,FirestoreEvent} = require("firebase-functions/v2/firestore");
+const {onDocumentWritten} = require("firebase-functions/v2/firestore");
 const {onCall} = require("firebase-functions/v2/https");
 const {getFirestore,FieldValue} = require("firebase-admin/firestore");
 const firestore = getFirestore();
@@ -75,17 +75,21 @@ exports.RedeemFifty = onCall({ maxInstances: 10 }, async (request) => {
     const uid = request.data.uid;
     const dbref = firestore.collection('users').doc(uid);
     const documentSnapshot = await dbref.get();
-    if (documentSnapshot.data().ReferPoints < 50) return "Funds";
+    if (documentSnapshot.data().ReferPoints < 10) return "Funds";
     const time = new Date().getTime();
     await dbref.update({
       ReferPoints: FieldValue.increment(-10),
       AddedAmount: FieldValue.increment(50),
       Transactions: FieldValue.arrayUnion({
+        type:'Deposit',
+        context:'Refer And Win',
+        Extra:'Redeemed 10 Refer Points',
+        tid:"RW"+time,
+        time:time,
+        To:'Added Amount',
+        From:null,
+        status:'success',
         Amount: '₹' + 50,
-        Type: 'Credit',
-        Context: 'Refer And Win',
-        To: 'Added Amount Amount (Wallet)',
-        Time: time,
       }),
     });
     await dbref.collection('ReferHistory').doc(time.toString()).set({
@@ -167,9 +171,6 @@ exports.RedeemPrize = onCall({maxInstances:10},async (request) => {
   catch(e){return "Error";}
 })
 
-
-
-
 exports.EditSet = onCall({maxInstances:10},async (request)=>{
   await firestore.collection('AllMatches').doc(request.data.MatchId).collection('ParticipantsWithTheirSets').doc(request.data.uid).update({
     [request.data.SetName]:request.data.Set
@@ -216,42 +217,43 @@ exports.Withdraw = onCall({maxInstances:10},async(request)=>{
   await firestore.collection('users').doc(request.data.uid).update({
     WinningAmount:FieldValue.increment(-request.data.Amount),
     Transactions: FieldValue.arrayUnion({
+      type:'Debit',
+      context:'Withdraw',
+      Extra:'Withdraw to '+request.data.mode,
+      tid:"WA"+time,
+      time:time,
+      To:null,
+      From:'Winnings Amount',
+      status:'Pending',
       Amount:'₹'+request.data.Amount,
-      Type:'Withdrawn',
-      Context:'Withdraw',
-      To:'Bank Account - '+request.data.AccountNumber,
-      Status:'Pending',
-      Time:time,
-    }),
-    BankAccount:{
-      AccountNumber:request.data.AccountNumber,
-      IFSC:request.data.IFSC,
-      Name:request.data.Name
-    }
+    })
   })
-  await firestore.collection('Withdrawl Requests').add({
+  await firestore.collection('Withdrawal Requests').doc(request.data.uid+"WA"+time).set({
     uid:request.data.uid,
     Amount:request.data.Amount,
     Name:request.data.Name,
     AccountNumber:request.data.AccountNumber,
     IFSCCode:request.data.IFSC,
     Index:request.data.index,
-    time:time
+    upi:request.data.upi,
+    To:request.data.To,
+    time:time,
+    tid:"WA"+time,
+    status:'Pending'
   }).then(()=>{
     return null;
   })
 })
 
-// redirectUrl: "https://ball24.in",
-// redirectMode: "POST",
 exports.Transaction = onCall({maxInstances:10},async(request)=>{
   const amount = parseFloat(request.data.amount) * 100;
+  const date = Date.now();
   const eventPayload = {
       merchantId: "BALL24ONLINE",
-      merchantTransactionId: "B24"+Date.now(),
+      merchantTransactionId: "B24"+date,
       merchantUserId: request.data.uid,
       amount: amount,
-      callbackUrl: `https://us-central1-ball-24.cloudfunctions.net/callbackResponse?uid=${request.data.uid}&amount=${request.data.amount}`,
+      callbackUrl: `https://us-central1-ball-24.cloudfunctions.net/callbackResponse?uid=${request.data.uid}&amount=${request.data.amount}&tid=${"B24"+date}`,
       mobileNumber: request.data.phone,
       paymentInstrument: {
           type: "PAY_PAGE",
@@ -271,7 +273,7 @@ exports.Transaction = onCall({maxInstances:10},async(request)=>{
   return data;
 })
 
-exports.callbackResponse = onRequest(async (req, res) => {
+exports.callbackResponse = onRequest({maxInstances:10},async (req, res) => {
   const amount = req.query.amount;
   if (req.method === 'POST') {
     const jsonResponse = JSON.parse(Buffer.from(req.body.response, 'base64').toString('utf-8'));
@@ -279,16 +281,35 @@ exports.callbackResponse = onRequest(async (req, res) => {
       await firestore.collection('users').doc(req.query.uid).update({
         AddedAmount:FieldValue.increment(jsonResponse.data.amount/100),
         Transactions:FieldValue.arrayUnion({
-          Amount:amount,
-          Context:'Deposit',
-          Time:new Date().getTime(),
+          type:'Deposit',
+          context:'Deposit',
+          Extra:null,
+          tid:req.query.tid,
+          time:new Date().getTime(),
           To:'Added Amount',
-          Type:'Credit'
+          From:null,
+          status:'success',
+          Amount: amount
         })
       })
       res.status(200).send('Payment success');
-    } 
-    else if (jsonResponse.code === 'PAYMENT_ERROR') res.status(200).send('Payment error');
+    }
+    else if(jsonResponse.code){
+      await firestore.collection('users').doc(req.query.uid).update({
+        Transactions:FieldValue.arrayUnion({
+          type:'Deposit',
+          context:'Deposit',
+          Extra:null,
+          tid:req.query.tid,
+          time:new Date().getTime(),
+          To:'Added Amount',
+          From:null,
+          status:'failed',
+          Amount: amount
+        })
+      })
+      res.status(200).send('Payment Hold (Failed)');
+    }
     else res.status(400).send('Bad Request');
   } 
   else res.status(405).send('Method Not Allowed');
@@ -301,42 +322,6 @@ exports.ProfileImage = onCall({maxInstances:10},async (request)=>{
     return null;
   })
 })
-
-
-
-
-
-// exports.ReferAndWinFifty = onCall({maxInstances:10},async (request)=>{
-//   let time = new Date().getTime();
-//   await firestore.collection('users').doc(request.data.uid).update({
-//     WinningAmount:FieldValue.increment(50),
-//     Transactions: FieldValue.arrayUnion({
-//       Amount:'₹'+(50),
-//       Type:'Credit',
-//       Context:'Refer And Win ',
-//       To:'Winning Amount (Wallet)',
-//       Time:time
-//     }),
-//     ReferClaims:request.data.replace
-//   }).then(()=>{
-//     return null;
-//   })
-// })
-
-// exports.ReferAndWinOthers = onCall({maxInstances:10},async (request)=>{
-//   await firestore.collection(request.data.collection).doc(request.data.document).set({
-//     UsersData:FieldValue.arrayUnion({
-//       uid:request.data.uid,
-//       email:request.data.email
-//     })
-//   },{merge:true})
-//   await firestore.collection('users').doc(request.data.uid).update({
-//     Email:request.data.email,
-//     ReferClaims:request.data.replace
-//   }).then(()=>{
-//     return null;
-//   })
-// })
 
 exports.Feedback = onCall({maxInstances:10},async (request)=>{
   await firestore.collection('Feedback').doc(request.data.uid).set({
@@ -355,7 +340,6 @@ exports.NameEnteredCreateDoc = onCall({maxInstances:10},async (request)=>{
     AddedAmount: 0,
     WinningAmount: 0,
     Contest:false,
-    // ReferClaims: Array(8).fill('NotClaimed'),
     DBCashBonus: 50,
     ProfileImage: request.data.photo,
     ReferredBy: request.data.refferedBy,
@@ -366,16 +350,30 @@ exports.NameEnteredCreateDoc = onCall({maxInstances:10},async (request)=>{
     Gender: "",
     OriginalName: "",
     Transactions: [],
-    BankAccount: {
-      AccountNumber: '',
-      Name: '',
-      IFSC: ''
-    }
+    BankAccount: null,
+    upi:null
   })
   if(request.data.Id)
     await firestore.collection('users').doc(request.data.Id).update({
       RefferalsOnThisName:FieldValue.increment(1),
       ReferPoints:FieldValue.increment(1)
+    })
+  return null;
+})
+
+exports.AddUpiBank = onCall({maxInstances:10},async (request)=>{
+  const dbref = firestore.collection('users').doc(request.data.uid)
+  if(request.data.bank==null)
+    await dbref.update({
+      upi:request.data.upi
+    })
+  else if(request.data.upi==null)
+    await dbref.update({
+      BankAccount:{
+        AccountHolder:request.data.AccountHolder,
+        IfscCode:request.data.IfscCode,
+        AccountNumber:request.data.AccountNumber
+      }
     })
   return null;
 })
@@ -402,11 +400,15 @@ exports.ContestEliminatorViaDeadline = onDocumentWritten({maxInstances:10 ,docum
               await firestore.collection('users').doc(uid).update({
                 AddedAmount:FieldValue.increment(Entry),
                 Transactions:FieldValue.arrayUnion({
-                  Amount:Entry,
-                  Context:'Refund (Contest Not Filled)', //To be changed in every match
-                  Time:time,
-                  To:'Winnings Wallet',
-                  Type:'Credit'
+                  type:'Deposit',
+                  context:'Refund',
+                  Extra:'Spots not filled', //To be changed in every match
+                  tid:"RB"+time,
+                  time:time,
+                  To:'Winnings Amount',
+                  From:null,
+                  status:'success',
+                  Amount: Entry,
                 })
               })
             })
@@ -445,11 +447,15 @@ exports.OnMatchLiveElimination = onDocumentWritten({maxInstances:10 ,document:"A
               await firestore.collection('users').doc(uid).update({
                 AddedAmount:FieldValue.increment(Entry),
                 Transactions:FieldValue.arrayUnion({
-                  Amount:Entry,
-                  Context:'Refund (Contest Not Filled)',
-                  Time:time,
-                  To:'Winnings Wallet',
-                  Type:'Credit'
+                  type:'Deposit',
+                  context:'Refund',
+                  Extra:'Spots not filled', //To be changed in every match
+                  tid:"RB"+time,
+                  time:time,
+                  To:'Winnings Amount',
+                  From:null,
+                  status:'success',
+                  Amount: Entry,
                 })
               })
             })
@@ -518,7 +524,6 @@ exports.assignPoints = onDocumentWritten({ maxInstances: 10, document: "AllMatch
   }
   return null;
 });
-
 
 exports.assignWonAmount = onDocumentWritten({maxInstances:10 ,document:"AllMatches/Match1"},async (event)=> {
   const beforeData = event.data.before.data();
@@ -589,12 +594,17 @@ exports.ContestParticipationNewUserAskForSet = onCall({maxInstances:10},async (r
     const dref = firestore.collection('users').doc(uid).collection('MyContests').doc(MatchId);
     const def = firestore.collection('AllMatches').doc(MatchId).collection('ParticipantsWithTheirSets');
     const db = firestore.collection('users').doc(uid);
+    const time = new Date().getTime();
     const Transactions = [{
-      Amount: 'Free 🎁',
-      Type: 'Debit',
-      Context: `Participated - ${TeamCode1} vs ${TeamCode2}`,
-      To: 'Wallet',
-      Time: new Date().getTime()
+      type:'Debit',
+      context:'Entry Paid',
+      Extra:`${TeamCode1} vs ${TeamCode2}`,
+      tid:"FCP"+time,
+      time:time,
+      To:null,
+      From:"Wallet",
+      status:'success',
+      Amount: 'Free ',
     }];
     const batch = firestore.batch();
     batch.update(dbref, { FilledSpots: FieldValue.increment(SetName.length) });
@@ -646,12 +656,17 @@ exports.ContestParticipationOldUserJZeroAskForSet = onCall({ maxInstances: 10 },
     const {AddedAmount, WinningAmount, DBCashBonus} = document.data();
     let AddedAmountFinal = AddedAmount;
     let WinningAmountFinal = WinningAmount;
+    const time = new Date().getTime();
     const Transactions = [{
-      Amount: `₹${MoneyToBeDeducted}${DBCashBonusUsable !== 0 ? ` + ${DBCashBonusUsable} cash bonus` : ''}`,
-      Type: 'Debit',
-      Context: `Participated - ${TeamCode1} vs ${TeamCode2}`,
-      To: 'Wallet',
-      Time: new Date().getTime()
+      type:'Debit',
+      context:'Entry Paid',
+      Extra:`${TeamCode1} vs ${TeamCode2}`,
+      tid:"CP"+time,
+      time:time,
+      To:null,
+      From:"Wallet",
+      status:'success',
+      Amount: `₹${MoneyToBeDeducted}${DBCashBonusUsable !== 0 ? ` + ${DBCashBonusUsable}` : ''}`,
     }];
     if (AddedAmount >= MoneyToBeDeducted) AddedAmountFinal -= MoneyToBeDeducted;
     else if (AddedAmount + WinningAmount >= MoneyToBeDeducted){
@@ -707,12 +722,17 @@ exports.ContestParticipationNewUser = onCall({maxInstances:10},async (request)=>
     if(documentSnap.data().FilledSpots+1 > documentSnap.data().MaximumSpots) return "Spots";
     const dref = firestore.collection('users').doc(uid).collection('MyContests').doc(MatchId);
     const def = firestore.collection('AllMatches').doc(MatchId).collection('ParticipantsWithTheirSets');
+    const time = new Date().getTime();
     const Transactions = [{
-      Amount: 'Free 🎁',
-      Type: 'Debit',
-      Context: `Participated - ${TeamCode1} vs ${TeamCode2}`,
-      To: 'Wallet',
-      Time: new Date().getTime()
+      type:'Debit',
+      context:'Entry Paid',
+      Extra:`${TeamCode1} vs ${TeamCode2}`,
+      tid:"FCP"+time,
+      time:time,
+      To:null,
+      From:"Wallet",
+      status:'success',
+      Amount: 'Free ', 
     }];
     const batch = firestore.batch();
     batch.update(dbref,{ FilledSpots:FieldValue.increment(1) });
@@ -758,12 +778,17 @@ exports.ContestParticipationOldUserJZero = onCall({maxInstances:10},async (reque
     const {AddedAmount, WinningAmount, DBCashBonus} = document.data();
     let AddedAmountFinal = AddedAmount;
     let WinningAmountFinal = WinningAmount;
+    const time = new Date().getTime();
     const Transactions = [{
-      Amount: `₹${MoneyToBeDeducted}${DBCashBonusUsable !== 0 ? ` + ${DBCashBonusUsable} cash bonus` : ''}`,
-      Type: 'Debit',
-      Context: `Participated - ${TeamCode1} vs ${TeamCode2}`,
-      To: 'Wallet',
-      Time: new Date().getTime()
+      type:'Debit',
+      context:'Entry Paid',
+      Extra:`${TeamCode1} vs ${TeamCode2}`,
+      tid:"CP"+time,
+      time:time,
+      To:null,
+      From:"Wallet",
+      status:'success',
+      Amount: `₹${MoneyToBeDeducted}${DBCashBonusUsable !== 0 ? ` + ${DBCashBonusUsable}` : ''}`,
     }];
     if (AddedAmount >= MoneyToBeDeducted) AddedAmountFinal -= MoneyToBeDeducted
     else if(AddedAmount+WinningAmount >= MoneyToBeDeducted){
@@ -1482,551 +1507,551 @@ exports.ContestParticipationOldUserJZero = onCall({maxInstances:10},async (reque
 //   }
 // })
 
-exports.DeployContests = onDocumentWritten({maxInstances:10,document:"DeployContests/{Deploy}"}, async (event) => {
-  // const documents = [
-  //   //##### MEGA CONTEST #######################################################################################################################
-  //   {
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest1",
-  //   Entry: "₹30",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "4000",
-  //   MaximumSpots: 2200 ,
-  //   PrizePool: "50000",
-  //   Type: "Mega Contest",
-  //   WinnersPercentage: "58%" ,
-  //   Overs:[16,19],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 4000,Spot: "1",Start: 1 },
-  //     {End: 2,PrizeMoney: 1000,Spot: "2",Start: 2 },
-  //     {End: 3,PrizeMoney: 600 ,Spot: "3",Start: 3 },
-  //     {End: 4,PrizeMoney: 400 ,Spot: "4",Start: 4 },
-  //     {End: 10,PrizeMoney: 200,Spot: "5-10",Start: 5 },
-  //     {End: 25,PrizeMoney: 100,Spot: "11-25",Start: 11 },
-  //     {End: 60,PrizeMoney: 70,Spot: "26-60",Start: 26 },
-  //     {End: 120,PrizeMoney: 60,Spot: "61-120",Start: 61 },
-  //     {End: 204,PrizeMoney: 40,Spot: "121-204",Start: 121 },
-  //     {End: 1267,PrizeMoney: 30,Spot: "204-1267",Start: 204 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest2",
-  //   Entry: "₹1",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "500",
-  //   MaximumSpots: 13333 ,
-  //   PrizePool: "10000",
-  //   Type: "Mega Contest",
-  //   WinnersPercentage: "260 Winners" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 10,PrizeMoney: 500,Spot: "1-10",Start: 1 },
-  //     {End: 260,PrizeMoney: 20,Spot: "11-260",Start: 11 },
-  //   ]
-  // },
-  // //##### TRENDING NOW #######################################################################################################################
-  // {
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest3",
-  //   Entry: "₹6",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "300",
-  //   MaximumSpots: 350 ,
-  //   PrizePool: "1500",
-  //   Type: "Trending Now",
-  //   WinnersPercentage: "5 Winners" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 5,PrizeMoney: 300,Spot: "1-5",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest4",
-  //   Entry: "₹29",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "500",
-  //   MaximumSpots: 140 ,
-  //   PrizePool: "3000",
-  //   Type: "Trending Now",
-  //   WinnersPercentage: "46%" ,
-  //   Overs:[1,4],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 500,Spot: "1",Start: 1 },
-  //     {End: 2,PrizeMoney: 300,Spot: "2",Start: 2 },
-  //     {End: 4,PrizeMoney: 150 ,Spot: "3-4",Start: 3 },
-  //     {End: 7,PrizeMoney: 100 ,Spot: "5-7",Start: 5 },
-  //     {End: 11,PrizeMoney: 75,Spot: "8-11",Start: 8 },
-  //     {End: 22,PrizeMoney: 40,Spot: "12-22",Start: 12 },
-  //     {End: 65,PrizeMoney: 20,Spot: "23-65",Start: 23 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest5",
-  //   Entry: "₹24",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "100",
-  //   MaximumSpots: 20 ,
-  //   PrizePool: "400",
-  //   Type: "Trending Now",
-  //   WinnersPercentage: "50%" ,
-  //   Overs:[4,7],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 100,Spot: "1",Start: 1 },
-  //     {End: 2,PrizeMoney: 70,Spot: "2",Start: 2 },
-  //     {End: 3,PrizeMoney: 50 ,Spot: "3",Start: 3 },
-  //     {End: 4,PrizeMoney: 40 ,Spot: "4",Start: 4 },
-  //     {End: 6,PrizeMoney: 30,Spot: "5-6",Start: 5 },
-  //     {End: 10,PrizeMoney: 24,Spot: "7-20",Start: 7 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest6",
-  //   Entry: "₹9",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "70",
-  //   MaximumSpots: 25 ,
-  //   PrizePool: "160",
-  //   Type: "Trending Now",
-  //   WinnersPercentage: "28%" ,
-  //   Overs:[10,13],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 70,Spot: "1",Start: 1 },
-  //     {End: 7,PrizeMoney: 15,Spot: "2-7",Start: 2 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest7",
-  //   Entry: "₹16",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "26",
-  //   MaximumSpots: 10 ,
-  //   PrizePool: "130",
-  //   Type: "Trending Now",
-  //   WinnersPercentage: "50%" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 5,PrizeMoney: 26,Spot: "1-5",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest8",
-  //   Entry: "₹75",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "250",
-  //   MaximumSpots: 4,
-  //   PrizePool: "44",
-  //   Type: "Trending Now",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[6,9],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 250,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest9",
-  //   Entry: "₹20",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "80",
-  //   MaximumSpots: 1500,
-  //   PrizePool: "21,600",
-  //   Type: "Trending Now",
-  //   WinnersPercentage: "270 Winners" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 270,PrizeMoney: 80,Spot: "1-270",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest10",
-  //   Entry: "₹25",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "2500",
-  //   MaximumSpots: 1577,
-  //   PrizePool: "31,540",
-  //   Type: "Trending Now",
-  //   WinnersPercentage: "1020 Winners" ,
-  //   Overs:[12,15],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 2500,Spot: "1",Start: 1 },
-  //     {End: 2,PrizeMoney: 710,Spot: "2",Start: 2 },
-  //     {End: 3,PrizeMoney: 500 ,Spot: "3",Start: 3 },
-  //     {End: 5,PrizeMoney: 150 ,Spot: "4-5",Start: 4 },
-  //     {End: 7,PrizeMoney: 100,Spot: "6-7",Start: 6 },
-  //     {End: 15,PrizeMoney: 80,Spot: "11-15",Start: 11 },            
-  //     {End: 20,PrizeMoney: 75,Spot: "16-20",Start: 16 },            
-  //     {End: 40,PrizeMoney: 50,Spot: "21-40",Start: 21 },            
-  //     {End: 80,PrizeMoney: 40,Spot: "41-80",Start: 41 },            
-  //     {End: 100,PrizeMoney: 35,Spot: "81-100",Start: 81 },
-  //     {End: 1020,PrizeMoney: 25,Spot: "101-1020",Start: 101 },
-  //   ]
-  // },
-  // //##### ONLY FOR BEGINNERS ##################################################################################################################
-  // {
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest11",
-  //   Entry: "₹13",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "100",
-  //   MaximumSpots: 100 ,
-  //   PrizePool: "1000",
-  //   Type: "Only For Beginners",
-  //   WinnersPercentage: "42%" ,
-  //   Overs:[1,4],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 100,Spot: "1",Start: 1 },
-  //     {End: 2,PrizeMoney: 50,Spot: "2",Start: 2 },
-  //     {End: 27,PrizeMoney: 25 ,Spot: "3",Start: 3 },
-  //     {End: 42,PrizeMoney: 15 ,Spot: "4",Start: 28 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest12",
-  //   Entry: "₹17",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "44",
-  //   MaximumSpots: 3,
-  //   PrizePool: "44",
-  //   Type: "Only For Beginners",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[10,13],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 44,Spot: "1",Start: 1 },
-  //   ]
-  // },
-  // //##### HIGH ENTRY = HIGH REWARDS ##################################################################################################################
+// exports.DeployContests = onDocumentWritten({maxInstances:10,document:"DeployContests/{Deploy}"}, async (event) => {
+//   // const documents = [
+//   //   //##### MEGA CONTEST #######################################################################################################################
+//   //   {
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest1",
+//   //   Entry: "₹30",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "4000",
+//   //   MaximumSpots: 2200 ,
+//   //   PrizePool: "50000",
+//   //   Type: "Mega Contest",
+//   //   WinnersPercentage: "58%" ,
+//   //   Overs:[16,19],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 4000,Spot: "1",Start: 1 },
+//   //     {End: 2,PrizeMoney: 1000,Spot: "2",Start: 2 },
+//   //     {End: 3,PrizeMoney: 600 ,Spot: "3",Start: 3 },
+//   //     {End: 4,PrizeMoney: 400 ,Spot: "4",Start: 4 },
+//   //     {End: 10,PrizeMoney: 200,Spot: "5-10",Start: 5 },
+//   //     {End: 25,PrizeMoney: 100,Spot: "11-25",Start: 11 },
+//   //     {End: 60,PrizeMoney: 70,Spot: "26-60",Start: 26 },
+//   //     {End: 120,PrizeMoney: 60,Spot: "61-120",Start: 61 },
+//   //     {End: 204,PrizeMoney: 40,Spot: "121-204",Start: 121 },
+//   //     {End: 1267,PrizeMoney: 30,Spot: "204-1267",Start: 204 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest2",
+//   //   Entry: "₹1",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "500",
+//   //   MaximumSpots: 13333 ,
+//   //   PrizePool: "10000",
+//   //   Type: "Mega Contest",
+//   //   WinnersPercentage: "260 Winners" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 10,PrizeMoney: 500,Spot: "1-10",Start: 1 },
+//   //     {End: 260,PrizeMoney: 20,Spot: "11-260",Start: 11 },
+//   //   ]
+//   // },
+//   // //##### TRENDING NOW #######################################################################################################################
+//   // {
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest3",
+//   //   Entry: "₹6",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "300",
+//   //   MaximumSpots: 350 ,
+//   //   PrizePool: "1500",
+//   //   Type: "Trending Now",
+//   //   WinnersPercentage: "5 Winners" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 5,PrizeMoney: 300,Spot: "1-5",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest4",
+//   //   Entry: "₹29",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "500",
+//   //   MaximumSpots: 140 ,
+//   //   PrizePool: "3000",
+//   //   Type: "Trending Now",
+//   //   WinnersPercentage: "46%" ,
+//   //   Overs:[1,4],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 500,Spot: "1",Start: 1 },
+//   //     {End: 2,PrizeMoney: 300,Spot: "2",Start: 2 },
+//   //     {End: 4,PrizeMoney: 150 ,Spot: "3-4",Start: 3 },
+//   //     {End: 7,PrizeMoney: 100 ,Spot: "5-7",Start: 5 },
+//   //     {End: 11,PrizeMoney: 75,Spot: "8-11",Start: 8 },
+//   //     {End: 22,PrizeMoney: 40,Spot: "12-22",Start: 12 },
+//   //     {End: 65,PrizeMoney: 20,Spot: "23-65",Start: 23 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest5",
+//   //   Entry: "₹24",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "100",
+//   //   MaximumSpots: 20 ,
+//   //   PrizePool: "400",
+//   //   Type: "Trending Now",
+//   //   WinnersPercentage: "50%" ,
+//   //   Overs:[4,7],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 100,Spot: "1",Start: 1 },
+//   //     {End: 2,PrizeMoney: 70,Spot: "2",Start: 2 },
+//   //     {End: 3,PrizeMoney: 50 ,Spot: "3",Start: 3 },
+//   //     {End: 4,PrizeMoney: 40 ,Spot: "4",Start: 4 },
+//   //     {End: 6,PrizeMoney: 30,Spot: "5-6",Start: 5 },
+//   //     {End: 10,PrizeMoney: 24,Spot: "7-20",Start: 7 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest6",
+//   //   Entry: "₹9",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "70",
+//   //   MaximumSpots: 25 ,
+//   //   PrizePool: "160",
+//   //   Type: "Trending Now",
+//   //   WinnersPercentage: "28%" ,
+//   //   Overs:[10,13],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 70,Spot: "1",Start: 1 },
+//   //     {End: 7,PrizeMoney: 15,Spot: "2-7",Start: 2 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest7",
+//   //   Entry: "₹16",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "26",
+//   //   MaximumSpots: 10 ,
+//   //   PrizePool: "130",
+//   //   Type: "Trending Now",
+//   //   WinnersPercentage: "50%" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 5,PrizeMoney: 26,Spot: "1-5",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest8",
+//   //   Entry: "₹75",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "250",
+//   //   MaximumSpots: 4,
+//   //   PrizePool: "44",
+//   //   Type: "Trending Now",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[6,9],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 250,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest9",
+//   //   Entry: "₹20",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "80",
+//   //   MaximumSpots: 1500,
+//   //   PrizePool: "21,600",
+//   //   Type: "Trending Now",
+//   //   WinnersPercentage: "270 Winners" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 270,PrizeMoney: 80,Spot: "1-270",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest10",
+//   //   Entry: "₹25",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "2500",
+//   //   MaximumSpots: 1577,
+//   //   PrizePool: "31,540",
+//   //   Type: "Trending Now",
+//   //   WinnersPercentage: "1020 Winners" ,
+//   //   Overs:[12,15],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 2500,Spot: "1",Start: 1 },
+//   //     {End: 2,PrizeMoney: 710,Spot: "2",Start: 2 },
+//   //     {End: 3,PrizeMoney: 500 ,Spot: "3",Start: 3 },
+//   //     {End: 5,PrizeMoney: 150 ,Spot: "4-5",Start: 4 },
+//   //     {End: 7,PrizeMoney: 100,Spot: "6-7",Start: 6 },
+//   //     {End: 15,PrizeMoney: 80,Spot: "11-15",Start: 11 },            
+//   //     {End: 20,PrizeMoney: 75,Spot: "16-20",Start: 16 },            
+//   //     {End: 40,PrizeMoney: 50,Spot: "21-40",Start: 21 },            
+//   //     {End: 80,PrizeMoney: 40,Spot: "41-80",Start: 41 },            
+//   //     {End: 100,PrizeMoney: 35,Spot: "81-100",Start: 81 },
+//   //     {End: 1020,PrizeMoney: 25,Spot: "101-1020",Start: 101 },
+//   //   ]
+//   // },
+//   // //##### ONLY FOR BEGINNERS ##################################################################################################################
+//   // {
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest11",
+//   //   Entry: "₹13",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "100",
+//   //   MaximumSpots: 100 ,
+//   //   PrizePool: "1000",
+//   //   Type: "Only For Beginners",
+//   //   WinnersPercentage: "42%" ,
+//   //   Overs:[1,4],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 100,Spot: "1",Start: 1 },
+//   //     {End: 2,PrizeMoney: 50,Spot: "2",Start: 2 },
+//   //     {End: 27,PrizeMoney: 25 ,Spot: "3",Start: 3 },
+//   //     {End: 42,PrizeMoney: 15 ,Spot: "4",Start: 28 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest12",
+//   //   Entry: "₹17",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "44",
+//   //   MaximumSpots: 3,
+//   //   PrizePool: "44",
+//   //   Type: "Only For Beginners",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[10,13],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 44,Spot: "1",Start: 1 },
+//   //   ]
+//   // },
+//   // //##### HIGH ENTRY = HIGH REWARDS ##################################################################################################################
   
-  // {
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest13",
-  //   Entry: "₹5250",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "10000",
-  //   MaximumSpots: 2 ,
-  //   PrizePool: "10000",
-  //   Type: "High Entry=High Rewards",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 10000,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest14",
-  //   Entry: "₹2700",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "10000",
-  //   MaximumSpots: 4 ,
-  //   PrizePool: "10000",
-  //   Type: "High Entry=High Rewards",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 10000,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest15",
-  //   Entry: "₹2700",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "10000",
-  //   MaximumSpots: 4 ,
-  //   PrizePool: "10000",
-  //   Type: "High Entry=High Rewards",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 10000,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest16",
-  //   Entry: "₹2850",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "10000",
-  //   MaximumSpots: 3 ,
-  //   PrizePool: "10000",
-  //   Type: "High Entry=High Rewards",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[10,13],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 10000,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest17",
-  //   Entry: "₹1789",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "6000",
-  //   MaximumSpots: 4 ,
-  //   PrizePool: "6000",
-  //   Type: "High Entry=High Rewards",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[8,11],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 6000,Spot: "1",Start: 1 },
-  //   ]
-  // },
-  // //##### HEAD TO HEAD #######################################################################################################################
-  // {
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest18",
-  //   Entry: "₹11",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "19",
-  //   MaximumSpots: 2,
-  //   PrizePool: "19",
-  //   Type: "Head To Head",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 19,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest19",
-  //   Entry: "₹15",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "27",
-  //   MaximumSpots: 2,
-  //   PrizePool: "27",
-  //   Type: "Head To Head",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[4,27],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 27,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest20",
-  //   Entry: "₹15",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "27",
-  //   MaximumSpots: 2,
-  //   PrizePool: "27",
-  //   Type: "Head To Head",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[1,4],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 27,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest21",
-  //   Entry: "₹77",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "135",
-  //   MaximumSpots: 2,
-  //   PrizePool: "135",
-  //   Type: "Head To Head",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[1,4],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 135,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest22",
-  //   Entry: "₹155",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "290",
-  //   MaximumSpots: 2,
-  //   PrizePool: "290",
-  //   Type: "Head To Head",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 290,Spot: "1",Start: 1 },
-  //   ]
-  // },
-  // //##### WINNER TAKES ALL #######################################################################################################################
-  // {
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest23",
-  //   Entry: "₹230",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "600",
-  //   MaximumSpots: 3,
-  //   PrizePool: "600",
-  //   Type: "Winner Takes All",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 600,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest24",
-  //   Entry: "₹179",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "600",
-  //   MaximumSpots: 4,
-  //   PrizePool: "179",
-  //   Type: "Winner Takes All",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 600,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest25",
-  //   Entry: "₹550",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "1500",
-  //   MaximumSpots: 4,
-  //   PrizePool: "1500",
-  //   Type: "Winner Takes All",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[1,4],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 1500,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest26",
-  //   Entry: "₹6",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "20",
-  //   MaximumSpots: 4,
-  //   PrizePool: "20",
-  //   Type: "Winner Takes All",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[16,19],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 20,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest27",
-  //   Entry: "₹35",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "90",
-  //   MaximumSpots: 3,
-  //   PrizePool: "90",
-  //   Type: "Winner Takes All",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[15,18],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 90,Spot: "1",Start: 1 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest28",
-  //   Entry: "₹3",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "140",
-  //   MaximumSpots: 50,
-  //   PrizePool: "140",
-  //   Type: "Winner Takes All",
-  //   WinnersPercentage: "1 Winner" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 140,Spot: "1",Start: 1 },
-  //   ]
-  // },
-  // //LOW ENTRY CONTESTS #######################################################################################################################
-  // {
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest29",
-  //   Entry: "₹1",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "1000",
-  //   MaximumSpots: 2000,
-  //   PrizePool: "1800",
-  //   Type: "Low Entry Contests",
-  //   WinnersPercentage: "5 Winners" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 1000,Spot: "1",Start: 1 },
-  //     {End: 5,PrizeMoney: 200,Spot: "2-5",Start: 2 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest30",
-  //   Entry: "₹2",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "500",
-  //   MaximumSpots: 500,
-  //   PrizePool: "900",
-  //   Type: "Low Entry Contests",
-  //   WinnersPercentage: "5 Winners" ,
-  //   Overs:[1,4],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 500,Spot: "1",Start: 1 },
-  //     {End: 5,PrizeMoney: 100,Spot: "2-5",Start: 2 },
-  //   ]
-  // },{
-  //   ContestStatus:'Upcoming',
-  //   DocumentId: "4Contest31",
-  //   Entry: "₹5",
-  //   FilledSpots: 0 ,
-  //   FirstPosition: "500",
-  //   MaximumSpots: 200,
-  //   PrizePool: "900",
-  //   Type: "Low Entry Contests",
-  //   WinnersPercentage: "5 Winners" ,
-  //   Overs:[17,20],
-  //   Refunded:false,
-  //   Winning:[
-  //     {End: 1,PrizeMoney: 500,Spot: "1",Start: 1 },
-  //     {End: 5,PrizeMoney: 100,Spot: "2-5",Start: 2 },
-  //   ]
-  // }]
+//   // {
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest13",
+//   //   Entry: "₹5250",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "10000",
+//   //   MaximumSpots: 2 ,
+//   //   PrizePool: "10000",
+//   //   Type: "High Entry=High Rewards",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 10000,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest14",
+//   //   Entry: "₹2700",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "10000",
+//   //   MaximumSpots: 4 ,
+//   //   PrizePool: "10000",
+//   //   Type: "High Entry=High Rewards",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 10000,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest15",
+//   //   Entry: "₹2700",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "10000",
+//   //   MaximumSpots: 4 ,
+//   //   PrizePool: "10000",
+//   //   Type: "High Entry=High Rewards",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 10000,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest16",
+//   //   Entry: "₹2850",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "10000",
+//   //   MaximumSpots: 3 ,
+//   //   PrizePool: "10000",
+//   //   Type: "High Entry=High Rewards",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[10,13],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 10000,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest17",
+//   //   Entry: "₹1789",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "6000",
+//   //   MaximumSpots: 4 ,
+//   //   PrizePool: "6000",
+//   //   Type: "High Entry=High Rewards",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[8,11],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 6000,Spot: "1",Start: 1 },
+//   //   ]
+//   // },
+//   // //##### HEAD TO HEAD #######################################################################################################################
+//   // {
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest18",
+//   //   Entry: "₹11",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "19",
+//   //   MaximumSpots: 2,
+//   //   PrizePool: "19",
+//   //   Type: "Head To Head",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 19,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest19",
+//   //   Entry: "₹15",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "27",
+//   //   MaximumSpots: 2,
+//   //   PrizePool: "27",
+//   //   Type: "Head To Head",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[4,27],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 27,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest20",
+//   //   Entry: "₹15",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "27",
+//   //   MaximumSpots: 2,
+//   //   PrizePool: "27",
+//   //   Type: "Head To Head",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[1,4],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 27,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest21",
+//   //   Entry: "₹77",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "135",
+//   //   MaximumSpots: 2,
+//   //   PrizePool: "135",
+//   //   Type: "Head To Head",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[1,4],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 135,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest22",
+//   //   Entry: "₹155",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "290",
+//   //   MaximumSpots: 2,
+//   //   PrizePool: "290",
+//   //   Type: "Head To Head",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 290,Spot: "1",Start: 1 },
+//   //   ]
+//   // },
+//   // //##### WINNER TAKES ALL #######################################################################################################################
+//   // {
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest23",
+//   //   Entry: "₹230",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "600",
+//   //   MaximumSpots: 3,
+//   //   PrizePool: "600",
+//   //   Type: "Winner Takes All",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 600,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest24",
+//   //   Entry: "₹179",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "600",
+//   //   MaximumSpots: 4,
+//   //   PrizePool: "179",
+//   //   Type: "Winner Takes All",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 600,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest25",
+//   //   Entry: "₹550",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "1500",
+//   //   MaximumSpots: 4,
+//   //   PrizePool: "1500",
+//   //   Type: "Winner Takes All",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[1,4],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 1500,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest26",
+//   //   Entry: "₹6",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "20",
+//   //   MaximumSpots: 4,
+//   //   PrizePool: "20",
+//   //   Type: "Winner Takes All",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[16,19],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 20,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest27",
+//   //   Entry: "₹35",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "90",
+//   //   MaximumSpots: 3,
+//   //   PrizePool: "90",
+//   //   Type: "Winner Takes All",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[15,18],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 90,Spot: "1",Start: 1 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest28",
+//   //   Entry: "₹3",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "140",
+//   //   MaximumSpots: 50,
+//   //   PrizePool: "140",
+//   //   Type: "Winner Takes All",
+//   //   WinnersPercentage: "1 Winner" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 140,Spot: "1",Start: 1 },
+//   //   ]
+//   // },
+//   // //LOW ENTRY CONTESTS #######################################################################################################################
+//   // {
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest29",
+//   //   Entry: "₹1",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "1000",
+//   //   MaximumSpots: 2000,
+//   //   PrizePool: "1800",
+//   //   Type: "Low Entry Contests",
+//   //   WinnersPercentage: "5 Winners" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 1000,Spot: "1",Start: 1 },
+//   //     {End: 5,PrizeMoney: 200,Spot: "2-5",Start: 2 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest30",
+//   //   Entry: "₹2",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "500",
+//   //   MaximumSpots: 500,
+//   //   PrizePool: "900",
+//   //   Type: "Low Entry Contests",
+//   //   WinnersPercentage: "5 Winners" ,
+//   //   Overs:[1,4],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 500,Spot: "1",Start: 1 },
+//   //     {End: 5,PrizeMoney: 100,Spot: "2-5",Start: 2 },
+//   //   ]
+//   // },{
+//   //   ContestStatus:'Upcoming',
+//   //   DocumentId: "4Contest31",
+//   //   Entry: "₹5",
+//   //   FilledSpots: 0 ,
+//   //   FirstPosition: "500",
+//   //   MaximumSpots: 200,
+//   //   PrizePool: "900",
+//   //   Type: "Low Entry Contests",
+//   //   WinnersPercentage: "5 Winners" ,
+//   //   Overs:[17,20],
+//   //   Refunded:false,
+//   //   Winning:[
+//   //     {End: 1,PrizeMoney: 500,Spot: "1",Start: 1 },
+//   //     {End: 5,PrizeMoney: 100,Spot: "2-5",Start: 2 },
+//   //   ]
+//   // }]
 
-  // const matchIds = ['Match1', 'Match2', 'Match3', 'Match4', 'Match5', 'Match6', 'Match7', 'Match8', 'Match9', 'Match10'];
+//   // const matchIds = ['Match1', 'Match2', 'Match3', 'Match4', 'Match5', 'Match6', 'Match7', 'Match8', 'Match9', 'Match10'];
 
-  // const batch = firestore.batch();
+//   // const batch = firestore.batch();
 
-  return await firestore.collection('AllMatches').doc('Match1').collection('4oversContests').get().then(QuerySnapshot=>{
-    const min = 1;
-    const max = 50;
-    QuerySnapshot.forEach(documentSnapshot=>{
-      documentSnapshot.ref.set({
-        Overs:Math.floor(Math.random() * (max - min + 1)) + min,
-        ContestStatus:'Upcoming'
-      },{merge:true})
-    })
-  })
+//   return await firestore.collection('AllMatches').doc('Match1').collection('4oversContests').get().then(QuerySnapshot=>{
+//     const min = 1;
+//     const max = 50;
+//     QuerySnapshot.forEach(documentSnapshot=>{
+//       documentSnapshot.ref.set({
+//         Overs:Math.floor(Math.random() * (max - min + 1)) + min,
+//         ContestStatus:'Upcoming'
+//       },{merge:true})
+//     })
+//   })
   
-  // matchIds.forEach(matchId => {
-  //   documents.forEach(doc => {
-  //     const contestRef = firestore.collection('AllMatches').doc(matchId).collection('4oversContests').doc(doc.DocumentId);
-  //     batch.set(contestRef, doc, { merge: true });
-  //   });
-  // });
+//   // matchIds.forEach(matchId => {
+//   //   documents.forEach(doc => {
+//   //     const contestRef = firestore.collection('AllMatches').doc(matchId).collection('4oversContests').doc(doc.DocumentId);
+//   //     batch.set(contestRef, doc, { merge: true });
+//   //   });
+//   // });
 
-  // await batch.commit();
-});
+//   // await batch.commit();
+// });
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started

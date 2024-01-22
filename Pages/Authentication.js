@@ -3,7 +3,7 @@ import {View,Text,StyleSheet,KeyboardAvoidingView,TextInput,ActivityIndicator,St
 import { useRoute } from '@react-navigation/native';
 import { width,height } from '../Dimensions';
 import auth from '@react-native-firebase/auth';
-import Header_PhoneNumberEnter from '../Headers/Header_PhoneNumberEnter';
+import HeaderBlank from '../Headers/HeaderBlank';
 import functions from '@react-native-firebase/functions'; 
 import firestore from '@react-native-firebase/firestore'; 
 import { Keyboard } from 'react-native';
@@ -73,7 +73,7 @@ function Authentication ({navigation}) {
     if(user){
       setLoadingSpinner(false)
       Keyboard.dismiss()
-      if(user.displayName==null) {setVisible(1); visibleRef.current = 1;}
+      if(user.displayName==null) {setVisible(1); visibleRef.current = 1;setPhoneNumber(user.phoneNumber)}
       else navigation.replace('MainStackNavigation',{screen:'Drawer',params:{screen:'MainTab',params:{screen:'Home'}}})
     }
   }
@@ -155,8 +155,7 @@ function Authentication ({navigation}) {
 
   return(<>
     <StatusBar animated={true} backgroundColor="#1141c1" />
-    <Header_PhoneNumberEnter navigation={()=>(visible!=-1 && visible!=1 )? setVisible(--visibleRef.current):navigation.goBack()} showValue={clickedValue} />
-
+    <HeaderBlank navigation={()=>(visible!=-1 && visible!=1 )? setVisible(--visibleRef.current):navigation.goBack()} Heading={clickedValue} color='#1141c1'/>
     {visible==-1 && <View style={styles.WholePageContainer}>
       <KeyboardAvoidingView style={styles.KeyboardAvoidingView}>
         <TextInput
@@ -246,7 +245,6 @@ function Authentication ({navigation}) {
       style={styles.ActivityIndicator}
      />{settingUp && <Text style={styles.SettingUp}>Setting Up the Environment ....</Text>}
     </>}
-    <Toast/>
     </>
   )
 }
@@ -277,7 +275,8 @@ PhoneNumberInput:{
   backgroundColor:'#fafafa',
   paddingLeft:13,
   borderRadius:4,
-  paddingVertical:10
+  paddingVertical:10,
+  height:48
 },
 youWillText:{
   color:'#121212',

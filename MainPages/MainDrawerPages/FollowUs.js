@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 export default function FollowUs({navigation}) {
   return (<>
     <StatusBar animated={true} backgroundColor="#000000"/>
-    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Follow us on social media '}/>
+    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Follow us on social media '} color='#1a1a1a'/>
     <View style={styles.MainWholeContainer}>
       <View style={styles.MainCardContainer} elevation={3}>
         <Text style={styles.HeadingText}>Follow us on social media</Text>

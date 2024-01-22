@@ -241,7 +241,6 @@ export default function ReferAndWin({navigation}) {
           <Text style={styles.HistoryText}>HISTORY</Text>
         </View>
         </TouchableWithoutFeedback>}
-        <Text style={styles.NotifiedText}>* You'll be notified via sms,email on winning a prize.</Text>
         <Animated.View style={[styles.CopiedContainer,{opacity:fadeAnim}]}>
           <Text style={styles.CopiedText}>Copied</Text>
         </Animated.View>
@@ -250,7 +249,7 @@ export default function ReferAndWin({navigation}) {
 
     <Modal isVisible={isModalVisible} animationIn={'slideInUp'} animationInTiming={350} animationOut={'slideOutDown'} animationOutTiming={350} backdropOpacity={0.5} onBackdropPress={()=>{setIsModalVisible(false)}} hideModalContentWhileAnimating={true}>
       <View style={{backgroundColor:'#ffffff',paddingTop:15,borderRadius:5,paddingHorizontal:12}}>
-        <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,textAlign:'center'}}>Do you want to redeem 50 Refer Points<Image source={require('../../accessories/ReferImages/bCoin2.png')} style={{width:14,height:14,marginLeft:3,marginBottom:4}}></Image> for a cash reward of 50 rupees?</Text>
+        <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,textAlign:'center'}}>Do you want to redeem 10 Refer Points<Image source={require('../../accessories/ReferImages/bCoin2.png')} style={{width:14,height:14,marginLeft:3,marginBottom:4}}></Image> for a cash reward of 50 rupees?</Text>
         <Text style={styles.ConfirmationText} onPress={redeem50}>Confirm</Text>
       </View>
     </Modal>
@@ -272,7 +271,6 @@ export default function ReferAndWin({navigation}) {
         {successMessage && <Text style={styles.SuccessMessage}><Icon name='checkbox-marked-circle-outline' color='#009e00' size={28}/> Request successfully placed {'\n'}A Confirmation mail has also been send to your email.</Text>}
         <Text style={styles.NoteText}>Note- {noteText}</Text>
     </BottomSheet>
-    <Toast/>
     </View>
     </>
   )
@@ -379,13 +377,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     fontSize: 20,
     marginLeft: 10,
-  },
-  NotifiedText: {
-    color: '#121212',
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-    marginHorizontal: 12,
-    marginTop: 10,
   },
   CopiedText: {
     color: '#000000',

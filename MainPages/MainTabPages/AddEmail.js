@@ -19,7 +19,7 @@ export default function AddEmail({navigation}) {
 
   return (<>
     <StatusBar animated={true} backgroundColor="#000000"/>
-    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Enter Email'}/>
+    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Enter Email'} color='#1a1a1a'/>
     <View style={{flex:1,backgroundColor:'#ffffff'}}>
     {confirmVisi==false && <Text style={styles.BSVerifyMail}>Enter the email you would like to use :</Text>}
     {confirmVisi==false && <KeyboardAvoidingView style={styles.KeyboardAvoidingView}>
@@ -79,7 +79,8 @@ export default function AddEmail({navigation}) {
       }}>CONFIRM OTP</Text>:<ActivityIndicator hidesWhenStopped={true} color="#1141c1" size="small"  animating={true} style={{marginTop:32}}/>}
     </KeyboardAvoidingView>
     </>}
-    <Toast/>
+    
+
     </View>
    </> 
   )
@@ -113,7 +114,8 @@ const styles = StyleSheet.create({
     backgroundColor:'#fafafa',
     paddingLeft:13,
     borderRadius:4,
-    paddingVertical:10
+    paddingVertical:10,
+    height:48
   },
   BSVerifyMail:{
     color:'#454545',

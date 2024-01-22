@@ -1,6 +1,6 @@
-import React,{useEffect,useState} from 'react';
+import React,{useCallback, useEffect,useState} from 'react';
 import {View,Text,StyleSheet,LayoutAnimation, UIManager, Platform, Image} from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore'; 
@@ -23,7 +23,7 @@ const customLayoutAnimation = {
   },
 };
 
-function ContestDisplay({navigation}) {
+function ContestDetails({navigation}) {
 
   const {MatchId,PrizePool,Overs,Entry,TeamCode1,TeamCode2,I1,I2,MatchLink,MatchKey,MaximumSpots,FirstPosition,WinnersPercentage,uid,Winnings,Free,Inning} = useRoute().params;
   const [filledSpots,setFilledSpots] = useState(null)
@@ -32,11 +32,13 @@ function ContestDisplay({navigation}) {
   const [refunded,setRefunded] = useState()
   const [newUser,setNewUser] = useState();
   const [scoreData,setScoreData] = useState(null);
+  const delay = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
 
   useEffect(() => {if (scoreData||contestStatus||MaximumSpots-filledSpots<=0) LayoutAnimation.configureNext(customLayoutAnimation);}, [scoreData,contestStatus,filledSpots]);
-  useEffect(() => {
-    setTimeout(() => {
-      const contestListener = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).onSnapshot((documentSnapshot) => {
+  useFocusEffect(
+    useCallback(() => {
+      const contestListener = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).onSnapshot(async (documentSnapshot) => {
+        await delay(400)
         setFilledSpots(documentSnapshot.data().FilledSpots);
         const m = (documentSnapshot.data().ContestStatus)[0]
         setContestStatus(m)
@@ -64,8 +66,9 @@ function ContestDisplay({navigation}) {
         setNewUser(documentSnapshot.data().Contest);
       });
       return () => { contestListener(); matchListener(); userListener();};
-    }, 400);
-  }, []);
+    }, [])
+  )
+
   return ( <>
     {(status==='Live' || status==='Completed') && scoreData!=null && <View style={{backgroundColor:'#1a1a1a',flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingTop:10}}>
     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
@@ -114,7 +117,7 @@ function ContestDisplay({navigation}) {
         <Text style={styles.SpotsLeftNumber}>{(MaximumSpots-filledSpots<=0)?'Contest full':MaximumSpots-filledSpots+" spots left"}</Text>
         <Text style={styles.TotalSpotsNumber}>{MaximumSpots} spots</Text>
       </View>
-      {contestStatus==='U' && MaximumSpots-filledSpots>0 && <Text style={styles.EntryMoneyText} onPress={()=>{if(contestStatus==='U')navigation.navigate('AskForSet')}}>{(!newUser && Free==true)?'Free  🤑':'Join  '+Entry}</Text>}
+      {contestStatus==='U' && MaximumSpots-filledSpots>0 && <Text style={styles.EntryMoneyText} onPress={()=>{if(contestStatus==='U')navigation.navigate('AskForSet')}}>{(!newUser && Free==true)?'Free':'Join  '+Entry}</Text>}
       <View style={styles.ExtraDetailsContainer}>
         <View style={styles.FirstIconContainer}>
           <Icon name='medal-outline' size={14} color='#666666'/>
@@ -143,11 +146,11 @@ function ContestDisplay({navigation}) {
       </View>
     </View>
 
-    {!refunded && <Tab.Navigator initialRouteName='Winning' backBehavior='none' screenOptions={{tabBarStyle:{elevation:3,height:37,backgroundColor:'#ffffff',paddingLeft:4},tabBarItemStyle:{width: 120,alignItems:'flex-start' },lazy:true}}>
-      <Tab.Screen name='Winning' component={RenderWinning} initialParams={{Winning:Winnings}} options={{tabBarIndicatorStyle:[styles.TabScreen,{width:70,marginLeft:13}],tabBarPressColor:'#fcfcfc',title:({focused})=>(
+    {!refunded && <Tab.Navigator initialRouteName='Winning' backBehavior='none' screenOptions={{swipeEnabled:true,tabBarStyle:{elevation:3,height:37,backgroundColor:'#ffffff',paddingLeft:4},tabBarItemStyle:{width: 120,alignItems:'flex-start' },lazy:true}}>
+      <Tab.Screen name='Winning' component={RenderWinning} initialParams={{Winning:Winnings}} options={{swipeEnabled:true,tabBarIndicatorStyle:[styles.TabScreen,{width:70,marginLeft:13}],tabBarPressColor:'#fcfcfc',title:({focused})=>(
         <Text style={[styles.TabScreenText,{color:focused?'#1a1a1a':'#a1a1a1',}]}>Winnings</Text>        
       )}}/>
-      {contestStatus && <Tab.Screen name='Leaderboard' component={contestStatus && contestStatus==='U'?ContestDetailLeaderboard:LiveLeaderboard} initialParams={{uid:uid,MatchId:MatchId,MatchKey:MatchKey,TeamCode1:TeamCode1,TeamCode2:TeamCode2,contestStatus:contestStatus}} options={{tabBarIndicatorStyle:[styles.TabScreen,{width:70,marginLeft:10}],tabBarPressColor:'#fcfcfc',title:({focused})=>(
+      {contestStatus && <Tab.Screen name='Leaderboard' component={contestStatus && contestStatus==='U'?ContestDetailLeaderboard:LiveLeaderboard} initialParams={{uid:uid,MatchId:MatchId,MatchKey:MatchKey,TeamCode1:TeamCode1,TeamCode2:TeamCode2,contestStatus:contestStatus}} options={{swipeEnabled:true,tabBarIndicatorStyle:[styles.TabScreen,{width:70,marginLeft:10}],tabBarPressColor:'#fcfcfc',title:({focused})=>(
         <Text style={[styles.TabScreenText,{color:focused?'#1a1a1a':'#a1a1a1',left:-20}]}>  Leaderboard</Text>        
       )}}/>}
     </Tab.Navigator>}
@@ -159,7 +162,7 @@ function ContestDisplay({navigation}) {
   );
 }
 
-export default ContestDisplay;
+export default ContestDetails;
 
 const styles = StyleSheet.create({
   Card: {

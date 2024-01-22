@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View ,TextInput ,ActivityIndicator ,StatusBar,Image,TouchableOpacity, LayoutAnimation, UIManager, Platform} from 'react-native'
-import React, { useState ,useEffect ,useRef} from 'react'
+import { StyleSheet, Text, View ,TextInput ,ActivityIndicator ,Image,TouchableOpacity, LayoutAnimation, UIManager, Platform} from 'react-native'
+import React, { useState ,useEffect, useCallback} from 'react'
 import HeaderBlank from '../../Headers/HeaderBlank'
 import {height,width} from '../../Dimensions';
 import firestore from '@react-native-firebase/firestore'; 
@@ -7,11 +7,13 @@ import functions from '@react-native-firebase/functions';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import auth from '@react-native-firebase/auth';
-import {useRoute} from '@react-navigation/native';
+import {useFocusEffect, useRoute} from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 
+if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental(true);
 export default function AddCash({navigation}) {
 
+  const uid = auth().currentUser.uid;
   const [inputValue,setInputValue] = useState(useRoute().params?useRoute().params.add:'₹150')
   const [phoneNumber,setphoneNumber] = useState(null)
   const [loadingSpinner,setLoadingSpinner] = useState(true);
@@ -21,22 +23,22 @@ export default function AddCash({navigation}) {
   const [DBCashBonus,setDBCashBonus] = useState(null);
   const [expanded, setExpanded] = useState(false);
 
-  const showToast = (type,text1,text2) => Toast.show({type: type,text1: text1,visibilityTime:2500,position:'top',topOffset:0,text2: text2});
+  const showToast = (type,text1,text2) => Toast.show({type: type,text1: text1,visibilityTime:4000,position:'top',topOffset:0,text2: text2});
 
-
-  useEffect(()=>{
-    setLoadingSpinner(false)
-    firestore().collection('users').doc(auth().currentUser.uid).onSnapshot(documentSnapshot=>{
-      setphoneNumber(documentSnapshot.data().PhoneNumber)
-      setAddedAmount(documentSnapshot.data().AddedAmount)
-      setWinningAmount(documentSnapshot.data().WinningAmount)
-      setDBCashBonus(documentSnapshot.data().DBCashBonus)
+  useFocusEffect(
+    useCallback(()=>{
       setLoadingSpinner(false)
-    })
-  },[]);
+      const unsubscribe = firestore().collection('users').doc(auth().currentUser.uid).onSnapshot(documentSnapshot=>{
+        setphoneNumber(documentSnapshot.data().PhoneNumber)
+        setAddedAmount(documentSnapshot.data().AddedAmount)
+        setWinningAmount(documentSnapshot.data().WinningAmount)
+        setDBCashBonus(documentSnapshot.data().DBCashBonus)
+        setLoadingSpinner(false)
+      })
+      return ()=>unsubscribe;
+    },[])
+  )
   useEffect(() => {LayoutAnimation.easeInEaseOut();},[expanded]);
-
-  if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental(true);
 
   const checkValue = async () => {
     let input = inputValue.substring(1);
@@ -44,10 +46,10 @@ export default function AddCash({navigation}) {
       setLoadingSpinner(true)
       setSettingUp(true);
       const startTransaction = functions().httpsCallable('Transaction');
-      startTransaction({amount:input,uid:auth().currentUser.uid,phone:phoneNumber}).then(async res=>{
+      startTransaction({amount:input,uid:uid,phone:phoneNumber}).then(async res=>{
         if(res.data.code == "PAYMENT_INITIATED") navigation.navigate('PaymentGateway',{url:res.data.data.instrumentResponse.redirectInfo.url})
-        else showToast('error','Something went wrong!','Hold tight.Our best engineers are onto it.');
-      })
+        else {showToast('error','Something went wrong!','Hold tight.Our best engineer are onto it.');setLoadingSpinner(false);setSettingUp(false)};
+      }).catch(e=>{showToast('error','Something went wrong!','Hold tight.Our best engineer are onto it.');setLoadingSpinner(false);setSettingUp(false)});
     }
     else if(input<5) showToast('info','Minimum deposit amount is ₹5','Please retry.');
     else if(input>25000) showToast('info','Maximum deposit amount is ₹25000','Please retry');
@@ -62,9 +64,8 @@ export default function AddCash({navigation}) {
   };
 
   return (<>
-    <StatusBar animated={true} backgroundColor="#121212"/>
-    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Add cash'}/>
-    <View style={{backgroundColor:'#ffffff'}}>
+    <HeaderBlank navigation={()=>{if(!loadingSpinner)navigation.goBack();else {setLoadingSpinner(false);setSettingUp(false);}}} Heading={'Add cash'} color='#1a1a1a'/>
+    {!loadingSpinner?<View style={{backgroundColor:'#ffffff'}}>
       <View style={styles.CurrentBalanceContainer}>
         <View style={styles.Row}>
           <Image source={require('../../accessories/DreamBallLogos/wallet.png')} style={{width:23,height:23}}/>
@@ -134,8 +135,7 @@ export default function AddCash({navigation}) {
       </View>
       {/* <Image style ={{width:width-24,height:0.152*(width-24),borderRadius:5,alignSelf:'center',overlayColor:'white'}} source={require('../../accessories/DreamBallLogos/gstfree1gif.gif')}/> */}
       <Text style={styles.AddButtonText} onPress={checkValue}>{'Add '+inputValue}</Text>
-    </View>
-    {loadingSpinner && <><ActivityIndicator 
+    </View>:<><ActivityIndicator 
       hidesWhenStopped={true}
       color="#1141c1"
       size="large"
@@ -143,9 +143,7 @@ export default function AddCash({navigation}) {
       style={styles.ActivityIndicator}
      />{settingUp && <Text style={styles.SettingUp}>Redirecting to payments ....</Text>}
     </>}
-    <Toast/>
-    </>
-  )
+  </>)
 }
 
 const styles = StyleSheet.create({
@@ -223,13 +221,12 @@ const styles = StyleSheet.create({
     borderRadius:4
   },
   ActivityIndicator: {
-    position: 'absolute',
-    height: height-130 ,
     width: width,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#ffffff',
     opacity: 1,
+    paddingTop:(height-52)/2.5
   },
   GSTDetailsContainer:{
     backgroundColor:'#ffffff',
@@ -263,7 +260,7 @@ const styles = StyleSheet.create({
     color:'#121212',
     fontSize:16,
     fontFamily:'Poppins-Medium',
-    marginTop:30,
+    // marginTop:100,
     textAlign:'center',
     flex:1
   },

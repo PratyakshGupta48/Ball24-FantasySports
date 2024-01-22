@@ -1,5 +1,5 @@
 import {View,Text,StyleSheet,FlatList,Image,TouchableNativeFeedback} from 'react-native';
-import {requestPermission,NotificationListener} from './FirebaseMessaging';
+import {requestPermission} from './FirebaseMessaging';
 import changeNavigationBarColor from 'react-native-navigation-bar-color';
 import React, { useState,useEffect,useCallback} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
@@ -10,6 +10,7 @@ import FastImage from 'react-native-fast-image';
 import auth from '@react-native-firebase/auth';
 import {height,width} from '../Dimensions';
 import SkeletonContent from '../SkeletonPlaceholder';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Home({navigation}) {
   const isFocused = useIsFocused();
@@ -18,13 +19,14 @@ export default function Home({navigation}) {
   const [MatchList,setMatchList] = useState([]);
   const [loadingSpinner,setLoadingSpinner] = useState(true);
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun','Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-  useEffect(()=>{
-    requestPermission();
-    NotificationListener();
-    setLoadingSpinner(true)
-    setTimeout(() => {
-      const unsubscribe = firestore().collection('AllMatches').onSnapshot((querySnapshot) => {
+  const delay = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
+  
+  useFocusEffect(
+    useCallback(()=>{
+      requestPermission();
+      setLoadingSpinner(true)
+      const unsubscribe = firestore().collection('AllMatches').onSnapshot(async (querySnapshot) => {
+        await delay(350)
         let matchList = [];
         querySnapshot.forEach((documentSnapshot) => {
           if (documentSnapshot.data().Status !== 'Completed')
@@ -37,9 +39,9 @@ export default function Home({navigation}) {
         setLoadingSpinner(false);
         changeNavigationBarColor('#ffffff')
       });
-      return () => {unsubscribe();};
-    }, 500);
-  },[refresh]);
+      return () => unsubscribe;
+    },[refresh])
+  )
 
   const data = [{
     imglink:require('../accessories/ReferImages/carousell.png'),
@@ -97,7 +99,7 @@ export default function Home({navigation}) {
   })
 
   const CarouselComponent = useCallback(()=><>
-    <Carousel data={data} loop={true} autoplayInterval={8000} itemWidth={width} sliderWidth={width} autoplay={isFocused} renderItem={({item})=>(
+    <Carousel data={data} loop={true} autoplayInterval={15000} itemWidth={width} sliderWidth={width} autoplay={isFocused} renderItem={({item})=>(
       <View style={{alignItems:'center',paddingTop:15}}>
         <TouchableNativeFeedback onPress={item.onPressLink}>
           <Image source={item.imglink} style={{width:width-20,height:65,borderRadius:6}} resizeMode='contain'/>
@@ -162,7 +164,7 @@ export default function Home({navigation}) {
         initialNumToRender={4}
         maxToRenderPerBatch={5}
         windowSize={30}
-        ListFooterComponent={()=>(<View style={{height:150}}></View>)}
+        ListFooterComponent={()=>(<View style={{height:280}}></View>)}
         style={{height:height}}
       />}
     </LinearGradient>

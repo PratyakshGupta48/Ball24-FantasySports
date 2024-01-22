@@ -18,53 +18,48 @@ export default function EntryCalculator({MatchId,TeamCode1,TeamCode2,ContestType
   const [shown,setShown] = useState(false);
 
   useEffect(()=>{
-    setTimeout(() => {
-      const unsubscribe = firestore().collection('users').doc(uid).onSnapshot(documentSnapshot=>{
-        const { AddedAmount, WinningAmount, DBCashBonus, Name, ProfileImage, Contest } = documentSnapshot.data();
-        setAmount(AddedAmount+WinningAmount);
-        setName(Name)
-        setProfileImage(ProfileImage)
-        setNewUser(Contest);
-        const availableBalance = AddedAmount+WinningAmount;
-        const repeatHandler = () => {
-          setJoiningAmount(0)
-          setConfirmtext('CONFIRM')
-        };
-        const repeatHandler2 = (DB) =>{
-          const Balance = availableBalance + DB
-          setDBCashBonusUsable(DB)
-          if(Balance<EntryNumber){
-            const joiningAmount = parseFloat((EntryNumber-Balance).toFixed(2));
-            setJoiningAmount(joiningAmount);
-            setConfirmtext('Add ₹'+joiningAmount+' and Join');
-          }
-          else repeatHandler()
+    const unsubscribe = firestore().collection('users').doc(uid).onSnapshot(documentSnapshot=>{
+      const { AddedAmount, WinningAmount, DBCashBonus, Name, ProfileImage, Contest } = documentSnapshot.data();
+      setAmount(AddedAmount+WinningAmount);
+      setName(Name)
+      setProfileImage(ProfileImage)
+      setNewUser(Contest);
+      const availableBalance = AddedAmount+WinningAmount;
+      const repeatHandler = () => {
+        setJoiningAmount(0)
+        setConfirmtext('CONFIRM')
+      };
+      const repeatHandler2 = (DB) =>{
+        const Balance = availableBalance + DB
+        setDBCashBonusUsable(DB)
+        if(Balance<EntryNumber){
+          const joiningAmount = parseFloat((EntryNumber-Balance).toFixed(2));
+          setJoiningAmount(joiningAmount);
+          setConfirmtext('Add ₹'+joiningAmount+' and Join');
         }
-        if(!Contest && Free==true){
-          repeatHandler()
-          setDBCashBonusUsable(0)
-        }
-        else if(ContestType=='Mega Contest'){
-          if(parseFloat(DBCashBonus)>=((15/100)*EntryNumber)) repeatHandler2(parseFloat(((15/100)*EntryNumber).toFixed(2)))
-          else repeatHandler2(parseFloat(DBCashBonus)) 
-        }
-        else repeatHandler2(0)  
-        setLoadingSpinner(false)
-      })
-      return ()=>{unsubscribe();}
-    }, 300);
-
+        else repeatHandler()
+      }
+      if(!Contest && Free==true){
+        repeatHandler()
+        setDBCashBonusUsable(0)
+      }
+      else if(ContestType=='Mega Contest'){
+        if(parseFloat(DBCashBonus)>=((15/100)*EntryNumber)) repeatHandler2(parseFloat(((15/100)*EntryNumber).toFixed(2)))
+        else repeatHandler2(parseFloat(DBCashBonus)) 
+      }
+      else repeatHandler2(0)  
+      setLoadingSpinner(false)
+    })
+    return ()=>{unsubscribe();}
   },[])
 
   const AddOrDeductCash = async () => {
     modalFix()
     setLoadingSpinner(true)
     function r(){
-      setLoadingSpinner(false)
       setShown(true)
-      setTimeout(() => {
-        navigation()
-      }, 500);
+      setLoadingSpinner(false)
+      setTimeout(() => navigation(), 500);
     }
     if(JoiningAmount!==0){
       navigation2(JoiningAmount)
@@ -134,7 +129,7 @@ const styles = StyleSheet.create({
   BottomSheetMainContainer:{
    paddingTop:30,
    paddingHorizontal:15,
-   backgroundColor:'#f6f7fb',
+   backgroundColor:'#ffffff',
    borderRadius:10,
    height:271,
    overflow:'hidden'
@@ -203,7 +198,7 @@ const styles = StyleSheet.create({
    width:'100%',
    alignItems:'center',
    justifyContent:'center',
-   backgroundColor:'#f6f7fb',
+   backgroundColor:'#ffffff',
    opacity:0.99,
    borderRadius:10
   },

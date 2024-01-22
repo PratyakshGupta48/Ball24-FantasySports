@@ -1,4 +1,4 @@
-import React, {useEffect, useState,useCallback} from 'react';
+import React, {useEffect, useState,useCallback,useRef} from 'react';
 import {View,Text,TouchableWithoutFeedback,ScrollView,StyleSheet,LayoutAnimation,UIManager,Platform} from 'react-native';
 import {useRoute} from '@react-navigation/native';
 import {height} from '../Dimensions';
@@ -8,6 +8,7 @@ import FastImage from 'react-native-fast-image';
 import Modal from "react-native-modal";
 import EntryCalculator from './EntryCalculator';
 import Toast from 'react-native-toast-message';
+import {BottomSheetModal,BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
 const customLayoutAnimation = {
@@ -23,10 +24,13 @@ const customLayoutAnimation = {
 
 export default function BallSelection({navigation}) {
 
+  const sheetRef1 = useRef(null);
+  const handlePresentModalPress = useCallback(() => {sheetRef1.current?.present();}, []);
+  const handleClosePress = () => sheetRef1.current.close()
+  const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior={isPriceModalFixed?'none':'close'}/>);
   const {MatchId, TeamCode1, TeamCode2, Team1, Team2, I1, I2,ContestType, MatchKey, MatchLink, Entry, uid, Free, Inning, Overs} = useRoute().params;
   const [selectedScores,setSelectedScores] = useState(null);
   const [isModalVisible,setIsModalVisible] = useState(false);
-  const [isPriceModalVisible,setIsPriceModalVisible] = useState(false);
   const [isPriceModalFixed,setIsPriceModalFixed] = useState(false);
   const [BallToBeUpdated,setballToBeUpdated] = useState(null);
   const [status,setStatus] = useState('');
@@ -72,11 +76,11 @@ export default function BallSelection({navigation}) {
       });
     }
     const foundMatch = transformedData.findIndex(arr => arraysAreEqual(outputArray, arr));
-    if(foundMatch==-1) setIsPriceModalVisible(true);
+    if(foundMatch==-1) handlePresentModalPress()
     else showToast('error','Duplicate Sets Found!',`The current set matches an existing set S${foundMatch+1}`)
   }
 
-  useEffect(() => {if(isPriceModalVisible||!isPriceModalVisible||scoreData||isModalVisible||!isModalVisible) LayoutAnimation.configureNext(customLayoutAnimation)}, [scoreData,isPriceModalVisible,isModalVisible]);
+  useEffect(() => {if(scoreData||isModalVisible||!isModalVisible) LayoutAnimation.configureNext(customLayoutAnimation)}, [scoreData,isModalVisible]);
   useEffect(() => {
     setIsPriceModalFixed(false)
     const matchListener = firestore().collection('AllMatches').doc(MatchId).onSnapshot((documentSnapshot) => {
@@ -282,12 +286,21 @@ export default function BallSelection({navigation}) {
         </ScrollView>
       </View>
     </Modal>
-    
     <Text onPress={()=>{if (allBallsFilled==0)NextButtonTouched()}} style={allBallsFilled==0 ?[styles.NextButtonText,{backgroundColor:'#009e00'}]:styles.NextButtonText}>Next</Text>
-  
-    <Modal isVisible={isPriceModalVisible} animationIn={'slideInUp'} animationInTiming={350} animationOut={'slideOutDown'} animationOutTiming={350} backdropOpacity={0.5} onBackdropPress={()=>{setIsPriceModalVisible(isPriceModalFixed)}} hideModalContentWhileAnimating={true}>
-      <EntryCalculator MatchId={MatchId} TeamCode1={TeamCode1} TeamCode2={TeamCode2} ContestType={ContestType} MatchKey={MatchKey} Entry={Entry} uid={uid} selectedScores={selectedScores} Free={Free} navigation={()=>{navigation.replace('ContestSelection',{Team1:Team1,Team2:Team2,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchId:MatchId,uid:uid,I1:I1,I2:I2,MatchLink:MatchLink})}} navigation2={(ja)=>navigation.navigate('AddCash',{add:'₹'+ja})} modalFix={()=>{setIsPriceModalFixed(true)}} disableModal={()=>{setIsPriceModalVisible(false)}} error={(err,err2)=>{setIsPriceModalVisible(false);showToast('error',err,err2)}} />
-    </Modal>
+    <BottomSheetModal
+      ref={sheetRef1}
+      snapPoints={['35%']}
+      enablePanDownToClose={!isPriceModalFixed}
+      enableOverDrag={true}
+      detached={true}
+      bottomInset={420}
+      containerStyle={{marginHorizontal:15}}
+      backdropComponent={renderBackdrop}
+      handleStyle={{position:'absolute',alignSelf:'center'}}
+      handleIndicatorStyle={{backgroundColor:'#ffffff'}}
+      backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
+      <EntryCalculator MatchId={MatchId} TeamCode1={TeamCode1} TeamCode2={TeamCode2} ContestType={ContestType} MatchKey={MatchKey} Entry={Entry} uid={uid} selectedScores={selectedScores} Free={Free} navigation={()=>{navigation.navigate('ContestSelection',{Team1:Team1,Team2:Team2,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchId:MatchId,uid:uid,I1:I1,I2:I2,MatchLink:MatchLink})}} navigation2={(ja)=>navigation.navigate('AddCash',{add:'₹'+ja})} modalFix={()=>{setIsPriceModalFixed(true)}} disableModal={handleClosePress} error={(err,err2)=>{handleClosePress();showToast('error',err,err2)}} />
+    </BottomSheetModal>
     <Toast />
     </>
   )}

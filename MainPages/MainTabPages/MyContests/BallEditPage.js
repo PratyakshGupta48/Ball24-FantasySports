@@ -29,10 +29,9 @@ export default function BallEditPage({navigation}) {
   const sheetRef1 = useRef(null);
   function openBottomSheet() {if (sheetRef1.current)sheetRef1.current.snapToIndex(0)}
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />);
-  const {MatchId,TeamCode1,TeamCode2,I1,I2,uid,Set,SetName} = useRoute().params;
+  const {MatchId,TeamCode1,TeamCode2,I1,I2,uid,SetName} = useRoute().params;
   const [isModalVisible,setIsModalVisible] = useState(false);
   const [BallToBeUpdated,setballToBeUpdated] = useState(null);
-  const [status,setStatus] = useState('');
   const [wideShown,showWide] = useState(false);
   const [wideNoBallShown,setWideNoBallShown] = useState(true);
   const [loadingSpinner,setLoadingSpinner] = useState(true);
@@ -98,7 +97,7 @@ export default function BallEditPage({navigation}) {
     }
     return transformedArray;
   }
-  const [scores, setScores] = useState(createOutputArray(Set));
+  const [scores, setScores] = useState([]);
   
   const NextButtonTouched = async () => {
     setLoadingSpinner(true)
@@ -139,6 +138,7 @@ export default function BallEditPage({navigation}) {
     let lockedFor;
     const unsubscribe1 = firestore().collection('AllMatches').doc(MatchId).collection('ParticipantsWithTheirSets').doc(uid).onSnapshot((documentSnapshot) => {
       if(documentSnapshot.exists){
+        setScores(createOutputArray(documentSnapshot.data()[SetName].flatMap(Object.values)))
         const data = documentSnapshot.data();
         let lockedStatus;
         if(data.LockedStatus) lockedStatus = data.LockedStatus.filter((item) => item.Name === SetName);
@@ -166,9 +166,8 @@ export default function BallEditPage({navigation}) {
         }
       });
     });
-    const unsubscribe3 = firestore().collection('AllMatches').doc(MatchId).onSnapshot(documentSnapshot=>setStatus(documentSnapshot.data().Status))
     setLoadingSpinner(false);
-    return () => {unsubscribe1();unsubscribe2();unsubscribe3()};
+    return () => {unsubscribe1();unsubscribe2();};
   }, []);
 
   const LockSet = () => {
@@ -213,7 +212,7 @@ export default function BallEditPage({navigation}) {
   
   return(<>
     <StatusBar animated={true} backgroundColor="#000000"/>
-    <Header_ContestSelection navigation={()=>{navigation.popToTop()}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId} status={status} WalletFunction={()=>{openBottomSheet()}}/>
+    <Header_ContestSelection navigation={()=>{navigation.goBack()}} navigation2={()=>{navigation.navigate('WebViewRules')}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId} WalletFunction={()=>{openBottomSheet()}}/>
     <View style={styles.MainDetailsContainer}>
       <View style={styles.TWholeContainer}>
         <View style={[styles.BallLeftMainContainer,{marginLeft:15,alignItems:'flex-start',}]}>
@@ -343,7 +342,6 @@ export default function BallEditPage({navigation}) {
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
         <WalletBottomSheet navigation={()=>navigation.navigate('AddCash')}/>
     </BottomSheet>
-    <Toast/>
     </>
   )}
 

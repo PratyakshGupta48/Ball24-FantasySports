@@ -32,7 +32,6 @@ export default function SetCreator({navigation}) {
   const {MatchId,uid,TeamCode1,TeamCode2,I1,I2} = useRoute().params;
   const [isModalVisible,setIsModalVisible] = useState(false);
   const [BallToBeUpdated,setballToBeUpdated] = useState(null);
-  const [status,setStatus] = useState('');
   const [wideShown,showWide] = useState(false);
   const [wideNoBallShown,setWideNoBallShown] = useState(true);
   const [loadingSpinner,setLoadingSpinner] = useState(false);
@@ -87,12 +86,6 @@ export default function SetCreator({navigation}) {
   }
 
   useEffect(() => {if(isModalVisible||!isModalVisible) LayoutAnimation.configureNext(customLayoutAnimation)}, [isModalVisible]);
-  useEffect(()=>{
-    const unsubscribe = firestore().collection('AllMatches').doc(MatchId).onSnapshot(documentSnapshot=>{
-      setStatus(documentSnapshot.data().Status);
-    })
-    return ()=>unsubscribe();
-  },[])
   
   const ScoreOption = useCallback((image, label ,style ,textStyle,number)=>(
     <TouchableWithoutFeedback onPress={()=>{
@@ -131,7 +124,7 @@ export default function SetCreator({navigation}) {
   
   return(<>
     <StatusBar animated={true} backgroundColor="#000000"/>
-    <Header_ContestSelection navigation={()=>{navigation.pop()}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId} status={status} WalletFunction={()=>{openBottomSheet()}}/>
+    <Header_ContestSelection navigation={()=>{navigation.pop()}} navigation2={()=>{navigation.navigate('WebViewRules')}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId} WalletFunction={()=>{openBottomSheet()}}/>
 
     <View style={styles.MainDetailsContainer}>
       <View style={styles.TWholeContainer}>
@@ -261,7 +254,6 @@ export default function SetCreator({navigation}) {
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
         <WalletBottomSheet navigation={()=>navigation.navigate('AddCash')}/>
     </BottomSheet>
-    <Toast/>
     </>
   )}
 

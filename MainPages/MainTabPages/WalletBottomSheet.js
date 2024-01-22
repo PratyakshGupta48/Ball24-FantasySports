@@ -20,7 +20,7 @@ export default function WalletBottomSheet({navigation}) {
   },[])
 
   return(<>
-    <Text style={styles.TotalMoneyAmount}>{'₹'+(AddedAmount+WinningAmount).toFixed(2)}</Text>
+    <Text style={styles.TotalMoneyAmount}>{'₹'+(AddedAmount+WinningAmount+DBCashBonus).toFixed(2)}</Text>
     <Text style={styles.TotalBalanceText}>Total Balance</Text>
     <View style={styles.Seperator}></View>
     <View style={styles.AmountAddedCard}>

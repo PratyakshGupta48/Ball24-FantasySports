@@ -1,11 +1,23 @@
 import React,{useState,useEffect,useCallback} from 'react';
-import {View,Text,StyleSheet,TouchableWithoutFeedback,SectionList,ScrollView ,TouchableOpacity} from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import {View,Text,StyleSheet,TouchableWithoutFeedback,SectionList,ScrollView ,TouchableOpacity,LayoutAnimation, UIManager, Platform} from 'react-native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import { SkeletonContestSelection } from '../SkeletonPlaceholder';
+
+if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
+const customLayoutAnimation = {
+  duration: 250,
+  create: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+    property: LayoutAnimation.Properties.opacity,
+  },
+  update: {
+    type: LayoutAnimation.Types.easeInEaseOut,
+  },
+};
 
 export default function ContestSelectionTab({navigation}) {
 
@@ -19,6 +31,7 @@ export default function ContestSelectionTab({navigation}) {
   const [sortedItemLength,setSortedItemsLength] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
   const [sortingFor,setSOrtingFor] = useState()
+  const delay = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
 
   const getNumberOfWinners = (item) => {
     const winnersPercentage = item.WinnersPercentage;
@@ -52,51 +65,53 @@ export default function ContestSelectionTab({navigation}) {
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
-  useEffect(() => {
-    setLoadingSpinner(true);
-    setSortApplied(false);
-    setSOrtingFor();
-    setTimeout(() => {
-      const getContest = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').onSnapshot((QuerySnapshot) => {
-        const FourOversContests = [];
-        const FilteredAll = [[], [], [], [], [], [], []];
-        setFourOvers([]);
-        const filters = [
-          { title: 'Mega Contest', type: 'Mega Contest', status: 'Upcoming', index: 0 },
-          { title: 'Trending Now', type: 'Trending Now', status: 'Upcoming', index: 1 },
-          { title: 'Only For Beginners', type: 'Only For Beginners', status: 'Upcoming', index: 2 },
-          { title: 'High Entry=High Rewards', type: 'High Entry=High Rewards', status: 'Upcoming', index: 3 },
-          { title: 'Head To Head', type: 'Head To Head', status: 'Upcoming', index: 4 },
-          { title: 'Low Entry Contests', type: 'Low Entry Contests', status: 'Upcoming', index: 5 },
-          { title: 'Winner Takes All', type: 'Winner Takes All', status: 'Upcoming', index: 6 },
-        ];
-        QuerySnapshot.forEach((documentSnapshot) => {
-          const data = documentSnapshot.data();
-          const index = filters.findIndex((filter) =>filter.type === data.Type && filter.status === data.ContestStatus && data.MaximumSpots - data.FilledSpots > 0);
-          if (index !== -1) {
-            const { title, index: filterIndex } = filters[index];
-            FilteredAll[filterIndex].push({ ...data, key: documentSnapshot.id, title });
-          }
+  useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation);}, [fourOvers,sortApplied,sortedItemLength,sortOrder,sortingFor,refresh]);
+  useFocusEffect(
+    useCallback(() => {
+      setLoadingSpinner(true);
+      setSortApplied(false);
+      setSOrtingFor();
+        const getContest = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').onSnapshot(async (QuerySnapshot) => {
+          await delay(200)
+          const FourOversContests = [];
+          const FilteredAll = [[], [], [], [], [], [], []];
+          setFourOvers([]);
+          const filters = [
+            { title: 'Mega Contest', type: 'Mega Contest', status: 'Upcoming', index: 0 },
+            { title: 'Trending Now', type: 'Trending Now', status: 'Upcoming', index: 1 },
+            { title: 'Only For Beginners', type: 'Only For Beginners', status: 'Upcoming', index: 2 },
+            { title: 'High Entry=High Rewards', type: 'High Entry=High Rewards', status: 'Upcoming', index: 3 },
+            { title: 'Head To Head', type: 'Head To Head', status: 'Upcoming', index: 4 },
+            { title: 'Low Entry Contests', type: 'Low Entry Contests', status: 'Upcoming', index: 5 },
+            { title: 'Winner Takes All', type: 'Winner Takes All', status: 'Upcoming', index: 6 },
+          ];
+          QuerySnapshot.forEach((documentSnapshot) => {
+            const data = documentSnapshot.data();
+            const index = filters.findIndex((filter) =>filter.type === data.Type && filter.status === data.ContestStatus && data.MaximumSpots - data.FilledSpots > 0);
+            if (index !== -1) {
+              const { title, index: filterIndex } = filters[index];
+              FilteredAll[filterIndex].push({ ...data, key: documentSnapshot.id, title });
+            }
+          });
+          FourOversContests.push(
+            ...FilteredAll.filter((item) => item.length !== 0).map((item) => ({
+              title: item[0].title,
+              data: item,
+            }))
+          );
+          setFourOvers(FourOversContests);
+          setFourOversCopy(FourOversContests);
+          setLoadingSpinner(false);
         });
-        FourOversContests.push(
-          ...FilteredAll.filter((item) => item.length !== 0).map((item) => ({
-            title: item[0].title,
-            data: item,
-          }))
-        );
-        setFourOvers(FourOversContests);
-        setFourOversCopy(FourOversContests);
-        setLoadingSpinner(false);
-      });
-      const userListener = firestore().collection('users').doc(uid).onSnapshot((documentSnapshot) => {
-        setNewUser(documentSnapshot.data().Contest);
-      });
-      return () => { getContest(); userListener();};
-    }, 500);
-  }, [refresh]);
-  
+        const userListener = firestore().collection('users').doc(uid).onSnapshot((documentSnapshot) => {
+          setNewUser(documentSnapshot.data().Contest);
+        });
+        return () => { getContest(); userListener();};
+    }, [refresh])
+  )
+
   const CardFormat = useCallback(({item}) => (
-    <TouchableWithoutFeedback onPress={()=>{navigation.replace('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.key,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDisplay',Inning:item.Inning})}} style={{backgroundColor:'#ffffff'}}>
+    <TouchableWithoutFeedback onPress={()=>{navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.key,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDetails',Inning:item.Inning})}} style={{backgroundColor:'#ffffff'}}>
       <View style={styles.Card} elevation={3}> 
         <View style={styles.PrizeEntryTextContainer}>
           <Text style={styles.PrizeText}>Prize Pool</Text>
@@ -113,8 +128,8 @@ export default function ContestSelectionTab({navigation}) {
             <Text style={styles.Rupee}>₹</Text>
             <Text style={styles.PrizeMoneyText}>{item.PrizePool}</Text>
           </View>
-          <Text style={styles.EntryMoneyText} onPress={()=>{navigation.navigate('ContestDetailNavigation',{refresh:()=>{setRefresh(!refresh)},Team1:Team1,Team2:Team2,MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.key,ContestType:item.Type,Entry:item.Entry,Overs:item.Overs,uid:uid,PrizePool:item.PrizePool,MaximumSpots:item.MaximumSpots,I1:I1,I2:I2,WinnersPercentage:item.WinnersPercentage,Winning:item.Winnings,MatchLink:MatchLink,Free:item.Free,initialScreen:'AskForSet',Inning:item.Inning,m:'U'})}}>
-            {(item.Free==true && (item.MaximumSpots-item.FilledSpots)>0)?((!newUser)?'Free 🤑':item.Entry) : ((item.Free!='true' && item.Entry) || (item.Type=='Mega Contest' && (item.MaximumSpots-item.FilledSpots)==0 && 'Full')) }
+          <Text style={styles.EntryMoneyText} onPress={()=>{navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.key,ContestType:item.Type,Entry:item.Entry,Overs:item.Overs,uid:uid,PrizePool:item.PrizePool,MaximumSpots:item.MaximumSpots,I1:I1,I2:I2,WinnersPercentage:item.WinnersPercentage,Winning:item.Winnings,MatchLink:MatchLink,Free:item.Free,initialScreen:'AskForSet',Inning:item.Inning,m:'U'})}}>
+            {(item.Free==true && (item.MaximumSpots-item.FilledSpots)>0)?((!newUser)?'Free':item.Entry) : ((item.Free!='true' && item.Entry) || (item.Type=='Mega Contest' && (item.MaximumSpots-item.FilledSpots)==0 && 'Full')) }
           </Text>
         </View>
         <View style={styles.ProgressLineContainer}></View>

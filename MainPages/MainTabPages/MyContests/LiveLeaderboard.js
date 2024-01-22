@@ -1,7 +1,7 @@
 import {View,Text,StyleSheet,TouchableWithoutFeedback,FlatList,ActivityIndicator} from 'react-native';
 import React,{useCallback,useEffect,useState,useRef} from 'react';
 import { useRoute } from '@react-navigation/native';
-import {width} from '../../../Dimensions';
+import {height, width} from '../../../Dimensions';
 import firestore from '@react-native-firebase/firestore'; 
 import FastImage from 'react-native-fast-image';
 import BallViewLive from './BallViewLive';
@@ -25,7 +25,7 @@ export default function LiveLeaderboard() {
   const handlePresentModalPress = useCallback(() => {sheetRef1.current?.present();}, []);
 
   useEffect(() => {
-    const unsubscricbe1 = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).onSnapshot((documentSnapshot) => setFilledSpots(documentSnapshot.data().FilledSpots));
+    firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).get().then((documentSnapshot) => {setFilledSpots(documentSnapshot.data().FilledSpots)});
     const myData = [];
     const initialLeaderboardData = [];
     const fetchInitialData = async (lim) => {  
@@ -79,10 +79,9 @@ export default function LiveLeaderboard() {
     };
     fetchMyData();
     fetchInitialData(8);
-    return () => unsubscricbe1;
   }, [refresh]);
   
-  const LeaderboardFinalData =React.memo( async () => {
+  const LeaderboardFinalData = async () => {
     if (lastItem) {
       const querySnapshot = await firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).collection('Participants').orderBy('PointsNumber', 'desc').startAfter(lastItem).limit(8).get();
       const finalLeaderboardData = [];
@@ -110,7 +109,7 @@ export default function LiveLeaderboard() {
       else setLastItem(null)
       setLeaderboardData([...LeaderboardData, ...finalLeaderboardData]);
     }
-  });
+  };
 
   const RenderItem = useCallback(({item})=>
     <TouchableWithoutFeedback onPress={()=>{
@@ -152,7 +151,7 @@ export default function LiveLeaderboard() {
       </View>
     </View>
     <View style={styles.Line}></View>
-    </>,[]
+    </>,[filledSpots,mySize]
   );
   const ListFooterComponent = useCallback(()=> <ActivityIndicator color="#969696" size="small" animating={true} />,[]);
 
@@ -173,8 +172,7 @@ export default function LiveLeaderboard() {
     />
     <BottomSheetModal
       ref={sheetRef1}
-      index={1}
-      snapPoints={['25%','50%']}
+      snapPoints={[ballViewData[1].length>size?41900/height+'%':49500/height+'%']}
       backdropComponent={renderBackdrop}
       handleStyle={{position:'absolute',alignSelf:'center'}}
       handleIndicatorStyle={{backgroundColor:'#ffffff'}}

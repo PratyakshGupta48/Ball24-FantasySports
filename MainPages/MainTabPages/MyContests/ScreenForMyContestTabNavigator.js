@@ -105,44 +105,45 @@ export default function ScreenForMyContestTabNavigator({navigation}) {
     </TouchableNativeFeedback>
   ),[]);
   
-  const EmptyComponent = useCallback(({sentence})=>(<>
+  const EmptyComponent = useCallback(()=>(<>
     <Image source={require('../../../accessories/DreamBallLogos/MyContestT.png')} style={styles.NoContestImage} />    
-    <Text style={styles.NoContestText}>{sentence}</Text>
+    <Text style={styles.NoContestText}>{emptyLine}</Text>
   </>),[]);
 
   useEffect(()=>{
     const MatchIds = []
-    const unsubscribe = firestore().collection('users').doc(uid).collection('MyContests').onSnapshot(QuerySnapshot=>{
+    firestore().collection('users').doc(uid).collection('MyContests').get().then(QuerySnapshot=>{
       QuerySnapshot.forEach(documentSnapshot=>{
         MatchIds.push({
           id:documentSnapshot.id,
           ContestCount:documentSnapshot.data().ContestCount.length
         });
       })
-      setMatchId(MatchId)
-      setLoadingSpinner(true)
-      const UpcomingList = []
-      firestore().collection('AllMatches').where('MatchId','in',MatchIds.map(obj => obj.id)).where('Status','==',status).get().then(QuerySnapshot=>{
-        QuerySnapshot.forEach(documentSnapshot=>{
-          UpcomingList.push({
-            Image1: documentSnapshot.data().Image1,
-            Image2: documentSnapshot.data().Image2,
-            LeagueName: documentSnapshot.data().LeagueName,
-            Team1: documentSnapshot.data().Team1,
-            Team2: documentSnapshot.data().Team2,
-            TeamCode1: documentSnapshot.data().TeamCode1,
-            TeamCode2: documentSnapshot.data().TeamCode2,
-            MatchTime: documentSnapshot.data().MatchTime,
-            contests: MatchIds.find(obj => obj.id === documentSnapshot.data().MatchId)?.ContestCount || 0 ,
-            MatchId: documentSnapshot.data().MatchId,
-            MatchLink: documentSnapshot.data().MatchLink,
+      if(MatchIds.length>0){
+        setMatchId(MatchId)
+        setLoadingSpinner(true)
+        const UpcomingList = []
+        firestore().collection('AllMatches').where('MatchId','in',MatchIds.map(obj => obj.id)).where('Status','==',status).get().then(QuerySnapshot=>{
+          QuerySnapshot.forEach(documentSnapshot=>{
+            UpcomingList.push({
+              Image1: documentSnapshot.data().Image1,
+              Image2: documentSnapshot.data().Image2,
+              LeagueName: documentSnapshot.data().LeagueName,
+              Team1: documentSnapshot.data().Team1,
+              Team2: documentSnapshot.data().Team2,
+              TeamCode1: documentSnapshot.data().TeamCode1,
+              TeamCode2: documentSnapshot.data().TeamCode2,
+              MatchTime: documentSnapshot.data().MatchTime,
+              contests: MatchIds.find(obj => obj.id === documentSnapshot.data().MatchId)?.ContestCount || 0 ,
+              MatchId: documentSnapshot.data().MatchId,
+              MatchLink: documentSnapshot.data().MatchLink,
+            })
           })
+          setList(UpcomingList);
+          setLoadingSpinner(false)
         })
-        setList(UpcomingList);
-        setLoadingSpinner(false)
-      })
+      }else setList([])
     })
-    return ()=>unsubscribe();
   },[refresh])
 
   return(<>
@@ -156,7 +157,7 @@ export default function ScreenForMyContestTabNavigator({navigation}) {
         maxToRenderPerBatch={5}
         windowSize={30}
         ListFooterComponent={()=>(<View style={{height:150}}></View>)}
-        ListEmptyComponent={()=><EmptyComponent sentence={emptyLine} />}
+        ListEmptyComponent={EmptyComponent}
         style={{height:height,paddingTop:13}}
       />}
     </LinearGradient>
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   NoContestText: {
-    color: '#121212',
+    color: '#242424',
     fontFamily: 'Poppins-Medium',
     marginHorizontal: 10,
     textAlign: 'center',

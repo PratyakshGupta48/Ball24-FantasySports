@@ -8,7 +8,7 @@ export default function Notification({navigation}) {
   return (
     <>
     <StatusBar animated={true} backgroundColor="#000000"/>
-    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Notifications '}/>
+    <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Notifications '} color='#1a1a1a' />
     
     <View style={styles.NoNewNotContainer}>
         <Image source={require('../accessories/DreamBallLogos/Notifications.png')} style={styles.NoNotificationImage} />    
