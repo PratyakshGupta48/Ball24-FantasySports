@@ -8,7 +8,7 @@ import ContestDetails from './ContestDetails';
 import AskForSetPage from './AskForSetPage';
 import BallSelection from './BallSelection';
 import { height } from '../Dimensions';
-import BottomSheet , {BottomSheetBackdrop,BottomSheetModalProvider} from '@gorhom/bottom-sheet';
+import BottomSheet , {BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 import WalletBottomSheet from './MainTabPages/WalletBottomSheet';
 
 const Stack = createNativeStackNavigator();
@@ -34,7 +34,6 @@ export default function ContestDetailNavigation({navigation}) {
 
   return (
     <>
-    <BottomSheetModalProvider>
     <StatusBar animated={true} backgroundColor="#000000"/>
     <Header_ContestSelection navigation={()=>{navigationV.pop()}} navigation2={()=>{navigation.navigate('WebViewRules')}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId} MatchKey={MatchKey} Overs={Overs}  WalletFunction={()=>{openBottomSheet()}}/>
     <Stack.Navigator initialRouteName={initialScreen}>
@@ -54,7 +53,6 @@ export default function ContestDetailNavigation({navigation}) {
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
         <WalletBottomSheet navigation={()=>navigationV.navigate('AddCash')}/>
     </BottomSheet>
-    </BottomSheetModalProvider>
     </>
   )
 }

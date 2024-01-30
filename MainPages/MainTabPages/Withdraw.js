@@ -8,14 +8,14 @@ import LinearGradient from 'react-native-linear-gradient';
 import { width } from '../../Dimensions';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import functions from '@react-native-firebase/functions';
-import {BottomSheetBackdrop,BottomSheetModal,BottomSheetModalProvider,BottomSheetScrollView} from '@gorhom/bottom-sheet';
+import {BottomSheetBackdrop,BottomSheetModal,BottomSheetScrollView} from '@gorhom/bottom-sheet';
 
 export default function Withdraw({navigation}) {
 
   const sheetRef1 = useRef(null);
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0}/>)
   const handlePresentModalPress = useCallback(() => {sheetRef1.current?.present();}, []);
-  const handleClosePress = () => sheetRef1.current.close()
+  const handleClosePress = () => sheetRef1.current.close();
 
   const uid = auth().currentUser.uid;
   const [inputValue,setInputValue] = useState('₹150');
@@ -169,12 +169,11 @@ export default function Withdraw({navigation}) {
       </KeyboardAvoidingView>
       <Text style={styles.ImportantNoteHeading}>*Important Note-{'\n'}<Text style={{fontSize:12}}>Make sure that you have entered correct details for UPI/Bank Account. We are unable to cross verify the details. Your money will be transferred to the added UPI ID/Bank Account if the bank accepts.{'\n'}{'\n'}You can see the status of your transactions in Withdrawals History. In case of any errors, we will refund your money back into your Ball24 account within 7 working days.{'\n'}{'\n'}Please contact our support in case of any issues. We will help in resolving your concerns.</Text></Text>
       </BottomSheetScrollView>
-      {loading?<ActivityIndicator color={'#1141c1'} size={'small'} />:<Text style={[styles.AddButtonText,{backgroundColor:(/^[a-z A-Z]+$/.test(name)&&/^[0-9]+$/.test(number) && number===confirmNumber && ifsc.length>0 && /^[A-Za-z0-9]+$/.test(ifsc))?'#109e38':'#999999',marginBottom:15,marginTop:15}]} onPress={HandleUpiLink}>Link UPI ID</Text>}
+      {loading?<ActivityIndicator color={'#1141c1'} size={'small'} />:<Text style={[styles.AddButtonText,{backgroundColor:(/^[a-z A-Z]+$/.test(name)&&/^[0-9]+$/.test(number) && number===confirmNumber && ifsc.length>0 && /^[A-Za-z0-9]+$/.test(ifsc))?'#109e38':'#999999',marginBottom:15,marginTop:15}]} onPress={HandleUpiLink}>Link Bank Account</Text>}
     </>)
   }
 
   return (<>
-  <BottomSheetModalProvider>
     <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Withdraw'} color='#1a1a1a'/>
     <View style={styles.CurrentBalanceContainer}>
       <View style={styles.Row}>
@@ -215,11 +214,11 @@ export default function Withdraw({navigation}) {
           <Image source={require('../../accessories/DreamBallLogos/banklogo.png')} style={{width:45,height:45,marginLeft:7,marginRight:8}}></Image>
           <View style={styles.NameAndDetailContainer}>
             <Text style={styles.Name}>Bank Account</Text>
-            {bankDetails!=null &&<View style={styles.ImageNAmeDetailsContainer}><Text style={styles.Detail}>{'*'.repeat(bankDetails.AccountNumber.length - 4) + bankDetails.AccountNumber.slice(-4)}   </Text><Text style={[styles.LinkText,{fontSize:11,paddingHorizontal:4,paddingVertical:1,color:'#1a457c',backgroundColor:'#f5f5f5'}]} onPress={()=>{setBottomSheetDecider(1);handlePresentModalPress();}}>Change</Text></View>}
+            {bankDetails!=null && bankDetails.AccountNumber && <View style={styles.ImageNAmeDetailsContainer}><Text style={styles.Detail}>{'*'.repeat(bankDetails.AccountNumber.length - 4) + bankDetails.AccountNumber.slice(-4)}   </Text><Text style={[styles.LinkText,{fontSize:11,paddingHorizontal:4,paddingVertical:1,color:'#1a457c',backgroundColor:'#f5f5f5'}]} onPress={()=>{setBottomSheetDecider(1);handlePresentModalPress();}}>Change</Text></View>}
           </View>
         </View>
         {!bankDetails && <Text style={styles.LinkText} onPress={()=>{setBottomSheetDecider(1);handlePresentModalPress();}}>Link Bank</Text>}
-        {bankDetails && <Icon name={isItemSelected=='B'?'radiobox-marked':'radiobox-blank'} size={20} color='#696969' onPress={()=>{setIsItemSelected('B')}}/>}
+        {bankDetails && bankDetails.AccountNumber && <Icon name={isItemSelected=='B'?'radiobox-marked':'radiobox-blank'} size={20} color='#696969' onPress={()=>{setIsItemSelected('B')}}/>}
       </View>
     </View>
     {(upi || bankDetails)&& spinner?<ActivityIndicator color={'#1141c1'} size={'small'}/>:<Text style={[styles.AddButtonText,{backgroundColor:(isItemSelected && inputValue.substring(1)>=50 && inputValue.substring(1)<=availableBalance)?'#109e38':'#999999'}]} onPress={HandleButtonPress}>Withdraw</Text>}
@@ -234,7 +233,6 @@ export default function Withdraw({navigation}) {
         {bottomSheetDecider==0 && <RenderUpi/>}
         {bottomSheetDecider==1 && <RenderBank/>}
     </BottomSheetModal>
-  </BottomSheetModalProvider>
   </>)
 }
 

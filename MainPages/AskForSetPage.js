@@ -136,13 +136,13 @@ export default function AskForSetPage({navigation}) {
           keyExtractor={(item) => item.Name}
         />
         <Text onPress={()=>{if(selectedItemIndices.length>0){handlePresentModalPress();setIsPriceModalFixed(false);}}} style={selectedItemIndices.length>0 ? [styles.NextButtonContainer,{backgroundColor:'#009e00'}] : styles.NextButtonContainer}>CONFIRM</Text>
-        {setsData && selectedItemIndices.length>0 && <Text style={[styles.YouCan,{textAlign:'left',marginBottom:0}]}>Selected- {selectedItemIndices.map(index=>setsData[index].Name?setsData[index].Name:null).join(', ')}</Text>}
+        {setsData && selectedItemIndices.length>0 && <Text style={[styles.YouCan,{textAlign:'left',marginBottom:0}]}>Selected- {selectedItemIndices.map(index=>(setsData && setsData[index] &&setsData[index].Name)?setsData[index].Name:null).join(', ')}</Text>}
       </View>}
       {setsData && setsData.length>0 && <Text style={styles.YouCan}>Note-You can edit the sets later from 'My Contests' section before match deadline passes.</Text>}
     </View>
     {selectedItemIndices.length>0 && setsData && <BottomSheetModal
       ref={sheetRef1}
-      snapPoints={['35%']}
+      snapPoints={['35%']}z
       enablePanDownToClose={!isPriceModalFixed}
       enableOverDrag={true}
       detached={true}
@@ -152,7 +152,7 @@ export default function AskForSetPage({navigation}) {
       handleStyle={{position:'absolute',alignSelf:'center'}}
       handleIndicatorStyle={{backgroundColor:'#ffffff'}}
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
-      <EntryCalculatorAskForSet AskForSet={selectedItemIndices.map(index=>setsData[index].Name)} MatchId={MatchId} TeamCode1={TeamCode1} TeamCode2={TeamCode2} ContestType={ContestType} MatchKey={MatchKey} Entry={Entry} uid={uid} Free={Free} navigation={()=>{
+      <EntryCalculatorAskForSet AskForSet={selectedItemIndices.map(index=>(setsData && setsData[index] && setsData[index].Name))} MatchId={MatchId} TeamCode1={TeamCode1} TeamCode2={TeamCode2} ContestType={ContestType} MatchKey={MatchKey} Entry={Entry} uid={uid} Free={Free} navigation={()=>{
         setSelectedItemIndices([])
         navigation.goBack();
         // navigation.replace('ContestSelection',{Team1:Team1,Team2:Team2,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchId:MatchId,uid:uid,I1:I1,I2:I2,MatchLink:MatchLink})

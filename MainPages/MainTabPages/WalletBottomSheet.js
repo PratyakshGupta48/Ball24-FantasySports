@@ -42,7 +42,7 @@ export default function WalletBottomSheet({navigation}) {
     </View>
     <View style={styles.iIconContainer}>
       <Icon name='cash-fast' size={35} color='#019401' style={{marginRight:8}}/>
-      <Text style={styles.DBinfoText}>Maximum usable Ball24 Cash Bonus = 15%{'\n'} of Mega Contest's Entry Fees</Text>
+      <Text style={styles.DBinfoText}>Maximum usable Ball24 Cash Bonus = 10%{'\n'} of Mega Contest's Entry Fees</Text>
     </View></>
   )
 }

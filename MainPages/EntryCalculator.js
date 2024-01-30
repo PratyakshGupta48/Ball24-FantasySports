@@ -91,7 +91,7 @@ export default function EntryCalculator({MatchId,TeamCode1,TeamCode2,ContestType
     </View>
     <View style={{...common,marginTop:8}}>
       <Text style={styles.EntryText}>💵 Entry</Text>
-      {(!newUser && Free=='true')?<Text style={styles.EntryAmount}>Free 🤑</Text>:<Text style={styles.EntryAmount}>{Entry}</Text>}
+      {(!newUser && Free==true)?<Text style={styles.EntryAmount}>Free</Text>:<Text style={styles.EntryAmount}>{Entry}</Text>}
     </View>
     <View style={{...common,marginTop:8}}>
       <Text style={styles.UsableCashText}>Usable Cash Bonus</Text>

@@ -41,6 +41,7 @@ import WebViewForRules from '../MainPages/WebViewForRules';
 import ContestDetailNavigation from '../MainPages/ContestDetailNavigation';
 
 import Toast from 'react-native-toast-message';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 
 const width = Dimensions.get('window').width;
@@ -78,7 +79,8 @@ function MainTabNavigator({navigation}) {
           <Text style={{color:focused?'#1141c1':'#969696',fontFamily:'Poppins-Medium',fontSize:10}}>Refer</Text>                  
         </View>
       )}}/>
-    </Tab.Navigator></>
+    </Tab.Navigator>
+    </>
   );
 }
 
@@ -142,6 +144,7 @@ function MainDrawernavigation() {
 
 function MainStackNavigation(){
   return(
+    <BottomSheetModalProvider>
     <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle: { backgroundColor: '#ffffff' },}}>
     {/* <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle:{backgroundColor:'#ffffff'}}}> */}
       <Stack.Screen name='ContestSelection' component={ContestSelection} options={{headerShown:false,detachPreviousScreen:true,animation:'slide_from_right',headerMode:'screen'}}/>
@@ -167,6 +170,7 @@ function MainStackNavigation(){
       <Stack.Screen name='HelpAndSupport' component={HelpAndSuppport} options={{headerShown:false,animation:'fade'}}/>
 
     </Stack.Navigator>
+    </BottomSheetModalProvider>
   )
 }
 

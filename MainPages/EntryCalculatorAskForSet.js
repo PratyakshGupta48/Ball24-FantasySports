@@ -89,7 +89,7 @@ export default function EntryCalculatorAskForSet({AskForSet,MatchId,TeamCode1,Te
     </View>
     <View style={{...common,marginTop:8}}>
       <Text style={styles.EntryText}>💵 Entry</Text>
-      {(!newUser && Free==true)?<Text style={styles.EntryAmount}>Free 🤑</Text>:<Text style={styles.EntryAmount}>{Entry+' ×'+AskForSet.length + ' = ₹'+EntryNumber}</Text>}
+      {(!newUser && Free==true)?<Text style={styles.EntryAmount}>Free</Text>:<Text style={styles.EntryAmount}>{Entry+' ×'+AskForSet.length + ' = ₹'+EntryNumber}</Text>}
     </View>
     <View style={{...common,marginTop:8}}>
       <Text style={styles.UsableCashText}>Usable Cash Bonus</Text>

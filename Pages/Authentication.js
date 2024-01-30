@@ -33,7 +33,7 @@ function Authentication ({navigation}) {
   async function authenticateUser() {
     if (phoneNumber.match(/^\d{10}$/)) {
       setVisible(++visibleRef.current)
-      const confirmation = await auth().signInWithPhoneNumber('+91'+phoneNumber).catch((e)=>{showToast('error','Invalid Phone Number','The entered number is invalid.')})
+      const confirmation = await auth().signInWithPhoneNumber('+91'+phoneNumber).catch((e)=>{console.log(e);showToast('error','Invalid Phone Number','The entered number is invalid.')})
       setConfirm(confirmation);
     } else showToast('error','Invalid Phone Number','The entered number is invalid.')
   }

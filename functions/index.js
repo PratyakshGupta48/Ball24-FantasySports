@@ -106,7 +106,7 @@ exports.RedeemPrize = onCall({maxInstances:10},async (request) => {
     const {uid,Point,Prize,Email,Mobile} = request.data;
     const dbref = firestore.collection('users').doc(uid);
     const documentSnapshot = await dbref.get();
-    if (documentSnapshot.data().ReferPoints < 50) return "Funds";
+    if (documentSnapshot.data().ReferPoints < Point) return "Funds";
     const time = new Date().getTime();
     await dbref.collection('ReferHistory').doc(time.toString()).set({
       Points:Point,
@@ -169,7 +169,56 @@ exports.RedeemPrize = onCall({maxInstances:10},async (request) => {
     return null;
   }
   catch(e){return "Error";}
+});
+
+exports.ProfileImage = onCall({maxInstances:10},async (request)=>{
+  await firestore.collection('users').doc(request.data.uid).update({
+    ProfileImage:request.data.url
+  }).then(()=>{
+    return null;
+  })
 })
+
+exports.Feedback = onCall({maxInstances:10},async (request)=>{
+  await firestore.collection('Feedback').doc(request.data.uid).set({
+    uid:request.data.uid,
+    Feedback:request.data.Feedback
+  }).then(()=>{
+    return null;
+  })
+})
+
+exports.NameEnteredCreateDoc = onCall({maxInstances:10},async (request)=>{
+  const dbref = firestore.collection('users').doc(request.data.uid);
+  await dbref.set({
+    Name: request.data.name,
+    PhoneNumber: request.data.phoneNumber,
+    AddedAmount: 0,
+    WinningAmount: 0,
+    Contest:false,
+    DBCashBonus: 50,
+    ProfileImage: request.data.photo,
+    ReferredBy: request.data.refferedBy,
+    RefferalsOnThisName: 0,
+    ReferPoints:0,
+    DateOfBirth: "",
+    Email: "",
+    Gender: "",
+    OriginalName: "",
+    Transactions: [],
+    BankAccount: null,
+    upi:null,
+    Pan:'Not Verified'  //Pending // Verified
+  })
+  if(request.data.Id)
+    await firestore.collection('users').doc(request.data.Id).update({
+      RefferalsOnThisName:FieldValue.increment(1),
+      ReferPoints:FieldValue.increment(1)
+    })
+  return null;
+})
+
+
 
 exports.EditSet = onCall({maxInstances:10},async (request)=>{
   await firestore.collection('AllMatches').doc(request.data.MatchId).collection('ParticipantsWithTheirSets').doc(request.data.uid).update({
@@ -212,6 +261,32 @@ exports.SwapSets = onCall({maxInstances:10},async(request)=>{
   })
 })
 
+
+
+exports.VerifyPan = onCall({maxInstances:10},async(request)=>{
+  let time = new Date().getTime();
+  await firestore.collection('users').doc(request.data.uid).update({
+    Pan:"Pending",
+    PanCard:request.data.Pan
+  })
+  await firestore.collection('Verify pan').doc(new Date().toDateString()+request.data.uid+time).set({
+    uid:request.data.uid,
+    Name:request.data.name,
+    Pan:request.data.Pan,
+    date:request.data.date,
+    image:request.data.image,
+    flat:request.data.flat,
+    area:request.data.area,
+    Pincode:request.data.Pincode,
+    city:request.data.city,
+    state:request.data.state,
+    time:time,
+    status:'Pending'
+  }).then(()=>{
+    return null;
+  })
+})
+
 exports.Withdraw = onCall({maxInstances:10},async(request)=>{
   let time = new Date().getTime();
   await firestore.collection('users').doc(request.data.uid).update({
@@ -228,7 +303,7 @@ exports.Withdraw = onCall({maxInstances:10},async(request)=>{
       Amount:'₹'+request.data.Amount,
     })
   })
-  await firestore.collection('Withdrawal Requests').doc(request.data.uid+"WA"+time).set({
+  await firestore.collection('Withdrawal Requests').doc(new Date().toDateString()+request.data.uid+"WA"+time).set({
     uid:request.data.uid,
     Amount:request.data.Amount,
     Name:request.data.Name,
@@ -278,6 +353,7 @@ exports.callbackResponse = onRequest({maxInstances:10},async (req, res) => {
   if (req.method === 'POST') {
     const jsonResponse = JSON.parse(Buffer.from(req.body.response, 'base64').toString('utf-8'));
     if (jsonResponse.code === 'PAYMENT_SUCCESS') {
+      const time = new Date()
       await firestore.collection('users').doc(req.query.uid).update({
         AddedAmount:FieldValue.increment(jsonResponse.data.amount/100),
         Transactions:FieldValue.arrayUnion({
@@ -285,12 +361,17 @@ exports.callbackResponse = onRequest({maxInstances:10},async (req, res) => {
           context:'Deposit',
           Extra:null,
           tid:req.query.tid,
-          time:new Date().getTime(),
+          time:time.getTime(),
           To:'Added Amount',
           From:null,
           status:'success',
           Amount: amount
         })
+      })
+      await firestore.collection('users').doc(req.query.uid).collection(`Deposits${time.getFullYear()}`).doc(req.query.tid).set({
+        time:time.getTime(),
+        Amount:amount,
+        tid:req.query.tid
       })
       res.status(200).send('Payment success');
     }
@@ -314,52 +395,6 @@ exports.callbackResponse = onRequest({maxInstances:10},async (req, res) => {
   } 
   else res.status(405).send('Method Not Allowed');
 });
-
-exports.ProfileImage = onCall({maxInstances:10},async (request)=>{
-  await firestore.collection('users').doc(request.data.uid).update({
-    ProfileImage:request.data.url
-  }).then(()=>{
-    return null;
-  })
-})
-
-exports.Feedback = onCall({maxInstances:10},async (request)=>{
-  await firestore.collection('Feedback').doc(request.data.uid).set({
-    uid:request.data.uid,
-    Feedback:request.data.Feedback
-  }).then(()=>{
-    return null;
-  })
-})
-
-exports.NameEnteredCreateDoc = onCall({maxInstances:10},async (request)=>{
-  const dbref = firestore.collection('users').doc(request.data.uid)
-  await dbref.set({
-    Name: request.data.name,
-    PhoneNumber: request.data.phoneNumber,
-    AddedAmount: 0,
-    WinningAmount: 0,
-    Contest:false,
-    DBCashBonus: 50,
-    ProfileImage: request.data.photo,
-    ReferredBy: request.data.refferedBy,
-    RefferalsOnThisName: 0,
-    ReferPoints:0,
-    DateOfBirth: "",
-    Email: "",
-    Gender: "",
-    OriginalName: "",
-    Transactions: [],
-    BankAccount: null,
-    upi:null
-  })
-  if(request.data.Id)
-    await firestore.collection('users').doc(request.data.Id).update({
-      RefferalsOnThisName:FieldValue.increment(1),
-      ReferPoints:FieldValue.increment(1)
-    })
-  return null;
-})
 
 exports.AddUpiBank = onCall({maxInstances:10},async (request)=>{
   const dbref = firestore.collection('users').doc(request.data.uid)
