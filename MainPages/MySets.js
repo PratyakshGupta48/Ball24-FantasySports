@@ -1,12 +1,12 @@
 import {View,Text,StyleSheet,FlatList,ImageBackground,ScrollView,TouchableWithoutFeedback,LayoutAnimation, UIManager, Platform} from 'react-native';
 import React,{useEffect,useState,useCallback,useRef} from 'react';
-import { useFocusEffect, useRoute } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore'; 
 import { height, width } from '../Dimensions';
 import FastImage from 'react-native-fast-image';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Tooltip from 'rn-tooltip';
-import BottomSheet , {BottomSheetBackdrop} from '@gorhom/bottom-sheet';
+import {BottomSheetModal,BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 import BallView from './MainTabPages/MyContests/BallViewPage';
 import SkeletonContent from '../SkeletonPlaceholder';
 import auth from '@react-native-firebase/auth';
@@ -38,13 +38,13 @@ export default function MySets({navigation}) {
   const colors = {"0":'#006269',"1":'#006269',"2":'#006269',"3":'#006269',"4":'#1e8e3e',"5":'#006269',"6":'#1e8e3e',"1WD":'#185ccc',"1NB":'#185ccc',"2NB":'#185ccc',"3NB":'#185ccc',"4NB":'#185ccc',"5NB":'#185ccc',"7NB":'#185ccc',"W":'#d93025'}
   const skip = ["1WD","1NB","2NB","3NB","4NB","5NB","7NB"];
 
-  const sheetRef1 = useRef(null);
-  const openBottomSheet1 = useCallback((index) => {if(sheetRef1.current) sheetRef1.current.snapToIndex(index);},[]);
+  const sheetRef2 = useRef(null);
+  const openBottomSheet1 = useCallback(() => {sheetRef2.current?.present();}, []);
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />)
 
   useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation)}, [setsData,loadingSpinner]);
-  useFocusEffect(
-    useCallback(()=>{
+  // useFocusEffect(
+    useEffect(()=>{
       setLoadingSpinner(true);
       const dbref = firestore().collection('AllMatches').doc(MatchId);
       const unsubscribe1 = dbref.collection('ParticipantsWithTheirSets').doc(uid).onSnapshot(async (documentSnapshot) => {
@@ -101,8 +101,7 @@ export default function MySets({navigation}) {
       const unsubscribe3 = firestore().collection('AllMatches').doc(MatchId).onSnapshot(documentSnapshot=>setMode(documentSnapshot.data().Status))
       return () => {unsubscribe1();unsubscribe2();unsubscribe3();}
     },[refresh])
-  )
-
+  // )
 
   const RenderItem = useCallback(({item})=>{
     const Set = item.Set;
@@ -113,8 +112,9 @@ export default function MySets({navigation}) {
       setUserSet(item.Set)
       setTotalRuns(totalRuns)
       setLockStatus(item.Lock)
-      openBottomSheet1(0)
+      openBottomSheet1()
     }}>
+      {/* <View style={[styles.BackgroundImage,{backgroundColor:'black'}]}> */}
     <ImageBackground source={require('../accessories/DreamBallLogos/bannernew.jpg')} borderRadius={5} style={styles.BackgroundImage} elevation={10} >
       <View style={styles.AccessoriesContainer}>
         <View style={styles.NameSetNameContainer}>
@@ -127,11 +127,11 @@ export default function MySets({navigation}) {
             setUserSet(item.Set)
             setTotalRuns(totalRuns)
             setLockStatus(item.Lock)
-            openBottomSheet1(0)
+            openBottomSheet1()
           }}/>
           {item.Lock===false && <Icon name='pencil-outline' size={20} color='#dedede' onPress={()=>{navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,uid:uid,I1:I1,I2:I2,SetName:item.Name})}}/>}
           {item.Lock===true &&<Tooltip popover={<Text style={styles.ToolTipText}>This set cannot be edited because you have used it to participate in a contest that is now live.</Text>} backgroundColor='#1141c1' height={80} width={250} ><Icon name='lock-outline' size={20} color='#dedede' /></Tooltip>}
-          <Icon name='share-variant-outline' size={20} color='#dedede' style={{paddingLeft:10}}/>
+          {/* <Icon name='share-variant-outline' size={20} color='#dedede' style={{paddingLeft:10}}/> */}
         </View>}
       </View>
       <View style={styles.SetMainContainer}>
@@ -150,7 +150,9 @@ export default function MySets({navigation}) {
           <Text style={styles.ExtraDetAnsText}>{`${Set.filter(item => item === '6' || item === '4').length} (${Set.filter(item => item === '4' || item === '6').join(',')})`}</Text>      
         </View> 
       </View>
-    </ImageBackground></TouchableWithoutFeedback>
+      {/* </View> */}
+    </ImageBackground>
+    </TouchableWithoutFeedback>
   },[])
 
   return (<>
@@ -162,6 +164,7 @@ export default function MySets({navigation}) {
         renderItem={RenderItem}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
+        windowSize={20}
         keyExtractor={(item)=>item.Name}
         ListFooterComponent={()=>(<View style={{height:60}}></View>)}
         ListEmptyComponent={()=>(!loadingSpinner && <View style={{alignItems:'center',justifyContent:'center',flexDirection:'column',paddingTop:30}}>
@@ -175,10 +178,9 @@ export default function MySets({navigation}) {
         <Icon name='plus-circle-outline' color={'#f6f7fb'} size={17}/>
         <Text style={styles.NextButtonText}>  Create Set</Text>
       </View></TouchableWithoutFeedback>}
-      <BottomSheet
-        ref={sheetRef1}
+      <BottomSheetModal
+        ref={sheetRef2}
         snapPoints={[userSet.length>Math.floor((width-34)/45)?55400/height+'%':47500/height+'%']}
-        index={-1}
         enablePanDownToClose={true}
         enableOverDrag={true}
         backdropComponent={renderBackdrop}
@@ -186,7 +188,7 @@ export default function MySets({navigation}) {
         handleIndicatorStyle={{backgroundColor:'#ffffff'}}
         backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
           <BallView name={name} userSetName={userSetName} userSet={userSet} lockStatus={lockStatus} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={totalRuns} navigation={()=>{navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,uid:uid,I1:I1,I2:I2,SetName:userSetName})}}/>
-      </BottomSheet>
+      </BottomSheetModal>
     </>)}</>
   );
 }

@@ -142,7 +142,7 @@ export default function AskForSetPage({navigation}) {
     </View>
     {selectedItemIndices.length>0 && setsData && <BottomSheetModal
       ref={sheetRef1}
-      snapPoints={['35%']}z
+      snapPoints={['35%']}
       enablePanDownToClose={!isPriceModalFixed}
       enableOverDrag={true}
       detached={true}

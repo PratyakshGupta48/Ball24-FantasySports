@@ -4,13 +4,14 @@ import SkeletonPlaceholder from "react-native-skeleton-placeholder";
 
 export default function SkeletonContent () {
   return <SkeletonPlaceholder backgroundColor='#f2f2f2' highlightColor='#fafcff'>
-    <View style={{marginTop: 6,marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:13}}/>
-    <View style={{marginTop: 6,marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:13}}/>
-    <View style={{marginTop: 6,marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:13}}/>
-    <View style={{marginTop: 6,marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:13}}/>
-    <View style={{marginTop: 6,marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:13}}/>
-    <View style={{marginTop: 6,marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:13}}/>
-    <View style={{marginTop: 6,marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:13}}/>
+    <View style={{marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:19}}/>
+    <View style={{marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:19}}/>
+    <View style={{marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:19}}/>
+    <View style={{marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:19}}/>
+    <View style={{marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:19}}/>
+    <View style={{marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:19}}/>
+    <View style={{marginHorizontal:15 ,height: 140 ,borderRadius:12,marginBottom:19}}/>
+
   </SkeletonPlaceholder> 
 }
 

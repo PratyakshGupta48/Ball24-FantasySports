@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View, FlatList, TouchableWithoutFeedback,LayoutAnimation, UIManager, Platform} from 'react-native'
 import React,{useEffect,useState,useCallback,useRef} from 'react';
-import {useFocusEffect, useRoute} from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore';
-import BottomSheet , {BottomSheetBackdrop} from '@gorhom/bottom-sheet';
+import {BottomSheetModal,BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 import { height,width } from '../../../Dimensions';
 import FastImage from 'react-native-fast-image';
 import Modal from "react-native-modal"; 
@@ -44,14 +44,14 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
   const sheetRef1 = useRef(null);
   const sheetRef2 = useRef(null);
 
-  const openBottomSheet1 = useCallback((index) => {if(sheetRef1.current) sheetRef1.current.snapToIndex(index);},[]);
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0}/>)
+  const openBottomSheet1 = useCallback(() => {sheetRef1.current?.present();}, []);
+  const handleClosePress = () => sheetRef1.current.close()
   const handlePresentModalPress = useCallback(() => {sheetRef2.current?.present();}, []);
-  const handleClosePress = () => sheetRef2.current.close()
 
   useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation)}, [selectedItemIndex,isModalVisible,loadingSpinner]);
-  useFocusEffect(
-    useCallback(() => {
+  // useFocusEffect(
+    useEffect(() => {
       setSelectedItemIndex(-1)
       const fetchData = async () => {
         setLoadingSpinner(true);
@@ -84,9 +84,9 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
           }
         });
       });
-      return () => unsubscribe2
+      return () => unsubscribe2;
     }, [refresh])
-  )
+  // )
 
   const RenderExtendedList = useCallback(({MatchKey,ContestStatus}) => {
     const [ContestSetsData,setContestSetsData] = useState([]);
@@ -248,22 +248,22 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
       refreshing={false}
       onRefresh={()=>setRefresh(!refresh)}
       renderItem={RenderItem}
-      initialNumToRender={7}
+      initialNumToRender={5}
+      maxToRenderPerBatch={5}
+      windowSize={15}
       getItemLayout={(data,index) => ({length: 200, offset: 200* index, index})}
       ListEmptyComponent={()=>(loadingSpinner==false && <View style={{alignItems:'center',justifyContent:'center',flexDirection:'column',paddingTop:30}}>
         <FastImage source={require('../../../accessories/DreamBallLogos/71bqZiF2kiL._SL1500_.jpg')} style={{width:width-100,height:width-100}}/>
         <Text style={{color:'#666666',textAlign:'center',fontFamily:'Poppins-Medium',fontSize:13,marginBottom:23,marginTop:-10}}>You haven't joined any contest yet! {"\n"}Start your journey of winning here</Text>
         <Text style={{paddingHorizontal:40,color:'#ffffff',backgroundColor:'#009e00',paddingVertical:7,fontFamily:'Poppins-Medium',borderRadius:8,fontSize:17}} onPress={()=>{navigation.jumpTo('Contests')}}>Explore Contests</Text>
       </View>)}
-      maxToRenderPerBatch={5}
     />
     <Modal isVisible={isModalVisible} animationIn={'slideInUp'} animationInTiming={350} animationOut={'slideOutDown'} animationOutTiming={350} backdropOpacity={0.5} onBackdropPress={()=>{setIsModalVisible(false)}} hideModalContentWhileAnimating={true} >
       <SwitchSets MatchId={MatchId} uid={uid} MatchKey={MatchKey} oldSet={oldSet} Id={Id} disableRefresh={()=>{setTimeout(()=>{setIsModalVisible(false);setRefresh(!refresh);}, 1500);}}/>
     </Modal>
-    <BottomSheet
+    <BottomSheetModal
       ref={sheetRef1}
       snapPoints={[(ballViewData[1].length>size?( (ballViewData[7]=='Upcoming')?55400/height+'%':58000/height+'%'):47500/height+'%')]}
-      index={-1}
       enablePanDownToClose={true}
       enableOverDrag={true}
       backdropComponent={renderBackdrop}
@@ -271,7 +271,7 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
       handleIndicatorStyle={{backgroundColor:'#ffffff'}}
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
         <BallView status={ballViewData[7]} Points={ballViewData[3]} Rank={ballViewData[4]} PointsArray={ballViewData[5]} name={Name} userSetName={ballViewData[0]} userSet={ballViewData[1]} lockStatus={ballViewData[6]} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={ballViewData[2]} navigation={()=>{navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,uid:uid,I1:I1,I2:I2,SetName:ballViewData[0]})}}/>
-    </BottomSheet>
+    </BottomSheetModal>
   </>)}
   </>)      
 }

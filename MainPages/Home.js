@@ -26,7 +26,7 @@ export default function Home({navigation}) {
       requestPermission();
       setLoadingSpinner(true)
       const unsubscribe = firestore().collection('AllMatches').onSnapshot(async (querySnapshot) => {
-        await delay(350)
+        await delay(200)
         let matchList = [];
         querySnapshot.forEach((documentSnapshot) => {
           if (documentSnapshot.data().Status !== 'Completed')
@@ -43,13 +43,15 @@ export default function Home({navigation}) {
     },[refresh])
   )
 
-  const data = [{
-    imglink:require('../accessories/ReferImages/carousell.png'),
-    onPressLink:()=>{navigation.navigate('ReferAndWin')}
-  },
+  const data = [
+  // {
+  //   imglink:require('../accessories/ReferImages/carousell.png'),
+  //   onPressLink:()=>{navigation.navigate('ReferAndWin')}
+  // },
   {
     imglink:require('../accessories/ReferImages/carousell22.png'),
-  }]
+  }
+]
 
   const GetTime = useCallback(({matchEndTime})=>{
     const date = new Date(matchEndTime);
@@ -124,8 +126,8 @@ export default function Home({navigation}) {
         </View>
         <View style={styles.TeamLogoContainer}>
           <View style={[styles.TeamLogoOneContainer,{marginLeft:10,}]}>
-            <FastImage source={{uri:item.Image1,priority: FastImage.priority.high}} style={styles.TeamLogoOne}/>
-            <FastImage source={{uri:item.Image1,priority: FastImage.priority.high}} style={[styles.TeamLogoOneShadow,{right:48}]}/>
+            <FastImage source={{uri:item.Image1,priority: FastImage.priority.normal}} style={styles.TeamLogoOne}/>
+            <FastImage source={{uri:item.Image1,priority: FastImage.priority.normal}} style={[styles.TeamLogoOneShadow,{right:48}]}/>
             <Text style={styles.TeamOneCode}>{item.TeamCode1}</Text>
           </View>
           {item.Status=='Upcoming' && <View style={styles.CountdownContainer}>
@@ -135,8 +137,8 @@ export default function Home({navigation}) {
           {item.Status=='Live' && <Text style={styles.LiveText}>• Live</Text>}
           <View style={[styles.TeamLogoOneContainer,{marginRight:10,}]}>
             <Text style={styles.TeamOneCode}>{item.TeamCode2}</Text>
-            <FastImage source={{uri:item.Image2,priority: FastImage.priority.high}} style={[styles.TeamLogoOneShadow,{left:48}]}/>
-            <FastImage source={{uri:item.Image2,priority: FastImage.priority.high}} style={styles.TeamLogoOne}/>
+            <FastImage source={{uri:item.Image2,priority: FastImage.priority.normal}} style={[styles.TeamLogoOneShadow,{left:48}]}/>
+            <FastImage source={{uri:item.Image2,priority: FastImage.priority.normal}} style={styles.TeamLogoOne}/>
           </View>
         </View>
         <View style={styles.Seperator2}></View>
@@ -161,11 +163,14 @@ export default function Home({navigation}) {
         onRefresh={()=>{setRefresh(!refresh)}}
         refreshing={false}
         renderItem={RenderItem}         
-        initialNumToRender={4}
+        initialNumToRender={5}
         maxToRenderPerBatch={5}
-        windowSize={30}
+        windowSize={25}
         ListFooterComponent={()=>(<View style={{height:280}}></View>)}
         style={{height:height}}
+        removeClippedSubviews={true}
+        ItemSeparatorComponent={()=><View style={{height:19}}></View>}
+        getItemLayout={(data, index) => ({length: 140.36363220214844 + 19, offset: (140.36363220214844 + 19) * index + 19, index})}
       />}
     </LinearGradient>
   </>
@@ -177,11 +182,9 @@ const styles=StyleSheet.create({
     backgroundColor:'#ffffff',
     marginHorizontal:15,
     borderRadius:12,
-    marginTop:6,
-    marginBottom:13,
     borderWidth:0.5,
     borderColor:'#dedede',
-    overflow: 'hidden'
+    overflow: 'hidden',
   },
   UpcomingText:{
     color:'#292929',

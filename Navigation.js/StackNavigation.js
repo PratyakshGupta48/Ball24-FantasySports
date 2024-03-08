@@ -1,6 +1,7 @@
 import React from 'react';
 import {Dimensions, View,Text,StyleSheet,Image,StatusBar} from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// import { CardStyleInterpolators, createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import auth from '@react-native-firebase/auth';
@@ -25,8 +26,8 @@ import BallViewCompleted from '../MainPages/MainTabPages/MyContests/BallViewComp
 import AddEmail from '../MainPages/MainTabPages/AddEmail';
 import ReferAndWinExtension from '../MainPages/MainTabPages/ReferAndWinExtension';
 import Withdraw from '../MainPages/MainTabPages/Withdraw';
-import ContestDetailLeaderboard from '../MainPages/ContestDetailLeaderboard';
-import LiveLeaderboard from '../MainPages/MainTabPages/MyContests/LiveLeaderboard';
+// import ContestDetailLeaderboard from '../MainPages/ContestDetailLeaderboard';
+// import LiveLeaderboard from '../MainPages/MainTabPages/MyContests/LiveLeaderboard';
 import Notification from '../MainPages/Notification';
 import HelpAndSuppport from '../MainPages/MainDrawerPages/HelpAndSuppport';
 import Home from '../MainPages/Home';
@@ -35,7 +36,7 @@ import More from '../MainPages/MainTabPages/More';
 import Header_Home from '../Headers/Header_Home';
 import PaymentGateway from '../MainPages/MainTabPages/PaymentGateway';
 import MyContestsMatchDisplayOnClickCompletedPage from '../MainPages/MainTabPages/MyContests/MyContestsMatchDisplayOnClickCompletedPage'
-import ScreenForMyContestTabNavigator from '../MainPages/MainTabPages/MyContests/ScreenForMyContestTabNavigator';
+// import ScreenForMyContestTabNavigator from '../MainPages/MainTabPages/MyContests/ScreenForMyContestTabNavigator';
 import WebViewForRules from '../MainPages/WebViewForRules';
 
 import ContestDetailNavigation from '../MainPages/ContestDetailNavigation';
@@ -49,125 +50,85 @@ const width = Dimensions.get('window').width;
 const Tab = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
+// const Stack = createStackNavigator();
 
-function MainTabNavigator({navigation}) {
+function MainTabNavigator({ navigation }) {
+  const tabItems = [
+    { name: 'Home', component: Home, icon: 'home-outline' },
+    { name: 'MyContests', component: MyContestsTabNavigator, icon: 'trophy-outline' },
+    { name: 'Wallet', component: Wallet, icon: 'wallet-outline' },
+    { name: 'Refer', component: ReferAndWin, icon: 'gift-outline' },
+  ];
   return (<>
-    <StatusBar animated={true} backgroundColor='#002487'/>
-    <Header_Home navigation={()=>{navigation.openDrawer()}} navigation2={()=>{navigation.navigate('Notification')}}/>
-    <Tab.Navigator initialRouteName='Home' screenOptions={{tabBarShowLabel:false,tabBarStyle:{height:56}}}>
-      <Tab.Screen name='Home' component={Home} options={{headerShown:false,tabBarIcon:({focused})=>(
+    <StatusBar animated={true} backgroundColor='#002487' />
+    <Header_Home navigation={() => navigation.openDrawer()} navigation2={() => navigation.navigate('Notification')} />
+    <Tab.Navigator initialRouteName='Home' screenOptions={{ tabBarShowLabel: false, headerShown: false, tabBarStyle: { height: 56 } }}>
+      {tabItems.map((item) => <Tab.Screen key={item.name} name={item.name} component={item.component} options={{tabBarIcon: ({ focused }) => (
         <View style={styles.MainContainer2}>
-          <Icon2 name='home-outline' size={26} color={focused?'#1141c1':'#969696'} style={styles.homeicon}/>  
-          <Text style={{color:focused?'#1141c1':'#969696',fontFamily:'Poppins-Medium',fontSize:10}}>Home</Text>        
+          <Icon2 name={item.icon} size={26} color={focused ? '#1141c1' : '#969696'} />
+          <Text style={{ color: focused ? '#1141c1' : '#969696', fontFamily: 'Poppins-Medium', fontSize: 10 }}>{item.name}</Text>
         </View>
-      )}}/>
-      <Tab.Screen name='MyContests' component={MyContestsTabNavigator} options={{headerShown:false,tabBarIcon:({focused})=>(
-        <View style={styles.MainContainer2}>
-          <Icon2 name='trophy-outline' size={26} color={focused?'#1141c1':'#969696'} style={styles.homeicon}/>          
-          <Text style={{color:focused?'#1141c1':'#969696',fontFamily:'Poppins-Medium',fontSize:10}}>My Matches</Text>        
-        </View>
-      )}}/>
-      <Tab.Screen name='Wallet' component={Wallet} options={{headerShown:false,tabBarIcon:({focused})=>(
-        <View style={styles.MainContainer2}>
-          <Icon2 name='wallet-outline' size={26} color={focused?'#1141c1':'#969696'} style={styles.homeicon}/>
-          <Text style={{color:focused?'#1141c1':'#969696',fontFamily:'Poppins-Medium',fontSize:10}}>Wallet</Text>                  
-        </View>
-      )}}/>
-      <Tab.Screen name='Refer' component={ReferAndWin} options={{headerShown:false,tabBarIcon:({focused})=>(
-        <View style={styles.MainContainer2}>
-          <Icon2 name="gift-outline" size={26} color={focused?'#1141c1':'#969696'} style={styles.homeicon}/>
-          <Text style={{color:focused?'#1141c1':'#969696',fontFamily:'Poppins-Medium',fontSize:10}}>Refer</Text>                  
-        </View>
-      )}}/>
+      ),}}/>)}
     </Tab.Navigator>
-    </>
-  );
+  </>);
 }
+
 
 function MainDrawernavigation() {
   const user = auth().currentUser;
+  const DrawerDesign = (iconName,drawerName) =>
+  <View style={styles.MainContainer}>
+    <Icon name={iconName} size={28} color='#121212'/>  
+    <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,paddingLeft:12}}>{drawerName}</Text>        
+  </View>
   return ( 
-    <Drawer.Navigator initialRouteName='MainTab' drawerContent={props => <DrawerContent {...props}/>} screenOptions={{drawerStyle:{width:width/1.15}}}>
-      <Drawer.Screen name='MainTab' component={MainTabNavigator} options={{drawerItemStyle:{display:'none'},headerShown:false}}/>
-      <Drawer.Screen name='Profile' component={Profile} options={{swipeEnabled:false,title:' ',headerShown:false,drawerStyle:{width:width/1.15},drawerItemStyle:{width:width,marginLeft:-1,marginRight:0,height:100},drawerIcon:()=>(
+    <Drawer.Navigator initialRouteName='MainTab' drawerContent={props => <DrawerContent {...props}/>} screenOptions={{swipeEnabled:false,title:'',headerShown:false,drawerStyle:{width:width/1.15}}}>
+      <Drawer.Screen name='MainTab' component={MainTabNavigator} options={{drawerItemStyle:{display:'none'}}}/>
+      <Drawer.Screen name='Profile' component={Profile} options={{drawerStyle:{width:width/1.15},drawerItemStyle:{width:width,marginLeft:-1,marginRight:0,height:100},drawerIcon:()=>(
         <View style={styles.MainProfileContainer}>
           <Image source={{uri:user.photoURL}} style={styles.ProfileImage}></Image>
           <Text style={styles.Name}>{user.displayName}</Text>
           <Icon name='chevron-forward-outline' size={30} color='#ffffff'/>  
         </View>
       )}}/>
-      <Drawer.Screen name='MyBalance' component={Wallet} options={{swipeEnabled:false,title:' ',headerShown:false,drawerIcon:()=>(
-        <View style={styles.MainContainer}>
-          <Icon name='wallet-outline' size={28} color='#121212'/>  
-          <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,paddingLeft:12}}>My Balance</Text>        
-        </View>
-      )}}/>
-      <Drawer.Screen name='ReferAndWin' component={ReferAndWin} options={{swipeEnabled:false,title:' ',headerShown:false,drawerIcon:()=>(
-        <View style={styles.MainContainer}>
-          <Icon name='people-outline' size={29} color='#121212'/>  
-          <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13.5,paddingLeft:12}}>Refer And Win</Text>        
-        </View>
-      )}}/>
-      <Drawer.Screen name='HowToPlay' component={HowToPlay} options={{swipeEnabled:false,headerShown:false,title:' ',drawerIcon:()=>(
-        <View style={styles.MainContainer}>
-          <Icon name='game-controller-outline' size={28} color='#121212'/>  
-          <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,paddingLeft:12}}>How To Play</Text>        
-        </View>
-      )}}/>
-      <Drawer.Screen name='Fantasy Point System' component={FantasyPointSystem} options={{swipeEnabled:false,headerShown:false,title:' ',drawerIcon:()=>(
-        <View style={styles.MainContainer}>
-          <Icon name='cash-outline' size={28} color='#121212'/>  
-          <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,paddingLeft:12}}> Dream Fantasy Point System</Text>        
-        </View>
-      )}}/>
-      <Drawer.Screen name='Follow us on social media' component={FollowUs} options={{swipeEnabled:false,headerShown:false,title:' ',drawerIcon:()=>(
-        <View style={styles.MainContainer}>
-          <Icon name='thumbs-up-outline' size={28} color='#121212'/>  
-          <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,paddingLeft:12}}>Follow us on social media</Text>        
-        </View>
-      )}}/> 
-      <Drawer.Screen name='Feedback' component={Feedback} options={{swipeEnabled:false,headerShown:false,title:' ',drawerIcon:()=>(
-        <View style={styles.MainContainer}>
-          <Icon name='newspaper-outline' size={28} color='#121212'/>  
-          <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,paddingLeft:12}}>Feedback</Text>        
-        </View>
-      )}}/> 
-      <Drawer.Screen name='More' component={More} options={{swipeEnabled:true,headerShown:false,title:' ',drawerIcon:()=>(
-        <View style={styles.MainContainer}>
-          <Icon2 name="dots-vertical" size={28} color='#121212'/>
-          <Text style={{color:'#121212',fontFamily:'Poppins-Medium',fontSize:13,paddingLeft:12}}>More</Text>                  
-        </View>
-      )}}/> 
+      <Drawer.Screen name='MyBalance' component={Wallet} options={{drawerIcon:()=>DrawerDesign('wallet-outline','My Balance')}}/>
+      <Drawer.Screen name='ReferAndWin' component={ReferAndWin} options={{drawerIcon:()=>DrawerDesign('people-outline','Refer And Redeem')}}/>
+      <Drawer.Screen name='HowToPlay' component={HowToPlay} options={{drawerIcon:()=>DrawerDesign('game-controller-outline','How To Play')}}/>
+      <Drawer.Screen name='Fantasy Point System' component={FantasyPointSystem} options={{drawerIcon:()=>DrawerDesign('cash-outline','Ball24 Fantasy Point System')}}/>
+      <Drawer.Screen name='Follow us on social media' component={FollowUs} options={{drawerIcon:()=>DrawerDesign('thumbs-up-outline','Follow us on social media')}}/> 
+      <Drawer.Screen name='Feedback' component={Feedback} options={{drawerIcon:()=>DrawerDesign('newspaper-outline','Feedback')}}/> 
+      <Drawer.Screen name='More' component={More} options={{drawerIcon:()=>DrawerDesign('ellipsis-vertical','More')}}/> 
     </Drawer.Navigator>          
   );
 }
 
+
 function MainStackNavigation(){
   return(
     <BottomSheetModalProvider>
-    <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle: { backgroundColor: '#ffffff' },}}>
-    {/* <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle:{backgroundColor:'#ffffff'}}}> */}
-      <Stack.Screen name='ContestSelection' component={ContestSelection} options={{headerShown:false,detachPreviousScreen:true,animation:'slide_from_right',headerMode:'screen'}}/>
-      <Stack.Screen name='ContestDetailNavigation' component={ContestDetailNavigation} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen'}}/>
+    {/* <StatusBar animated={true} backgroundColor='#002487' /> */}
+    <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle: { backgroundColor: '#ffffff' },headerShown:false,animation:'slide_from_right',statusBarColor:'#1a1a1a',orientation:'portrait_up'}}>
+      <Stack.Screen name='ContestSelection' component={ContestSelection} options={{detachPreviousScreen:'true'}}/>
+      <Stack.Screen name='ContestDetailNavigation' component={ContestDetailNavigation}/>
 
-      <Stack.Screen name='Drawer' component={MainDrawernavigation} options={{headerShown:false,detachPreviousScreen:true,headerMode:'screen',animation:'fade'}}/>
-      <Stack.Screen name='AddCash' component={AddCash} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen'}}/>
-      <Stack.Screen name='PaymentGateway' component={PaymentGateway} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
-      <Stack.Screen name='Transactions' component={Transactions} options={{headerShown:false,animation:'fade'}}/>
-      <Stack.Screen name='SetCreator' component={SetCreator} options={{headerShown:false,detachPreviousScreen:true,animation:'fade',headerMode:'screen'}}/>
-      <Stack.Screen name='ContestDetailLeaderboard' component={ContestDetailLeaderboard} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
-      <Stack.Screen name='LiveLeaderboard' component={LiveLeaderboard} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
-      <Stack.Screen name='ScreenForMyContestTabNavigator' component={ScreenForMyContestTabNavigator} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
-      <Stack.Screen name='MyMatchCompleted' component={MyContestsMatchDisplayOnClickCompletedPage} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
-      <Stack.Screen name='AddEmail' component={AddEmail} options={{headerShown:false,animation:'fade',headerMode:'screen'}}/>
-      <Stack.Screen name='ReferAndWinExtension' component={ReferAndWinExtension} options={{headerShown:false,animation:'fade'}}/>
-      <Stack.Screen name='Withdraw' component={Withdraw} options={{headerShown:false,animation:'fade'}}/>
-      <Stack.Screen name='Notification' component={Notification} options={{headerShown:false,animation:'fade'}}/>
-      <Stack.Screen name='WebViewRules' component={WebViewForRules} options={{headerShown:false,animation:'fade'}}/>
+      <Stack.Screen name='Drawer' component={MainDrawernavigation} options={{detachPreviousScreen:true,animation:'fade',statusBarColor:'#002487'}}/>
+      <Stack.Screen name='AddCash' component={AddCash}/>
+      <Stack.Screen name='PaymentGateway' component={PaymentGateway}/>
+      <Stack.Screen name='Transactions' component={Transactions}/>
+      <Stack.Screen name='SetCreator' component={SetCreator} options={{detachPreviousScreen:'true',presentation:'modal'}}/>
+      {/* <Stack.Screen name='ContestDetailLeaderboard' component={ContestDetailLeaderboard} options={{animation:'fade'}}/> */}
+      {/* <Stack.Screen name='LiveLeaderboard' component={LiveLeaderboard} options={{animation:'fade'}}/> */}
+      {/* <Stack.Screen name='ScreenForMyContestTabNavigator' component={ScreenForMyContestTabNavigator} options={{animation:'fade'}}/> */}
+      <Stack.Screen name='MyMatchCompleted' component={MyContestsMatchDisplayOnClickCompletedPage} options={{animation:'fade'}}/>
+      <Stack.Screen name='AddEmail' component={AddEmail}/>
+      <Stack.Screen name='ReferAndWinExtension' component={ReferAndWinExtension}/>
+      <Stack.Screen name='Withdraw' component={Withdraw}/>
+      <Stack.Screen name='Notification' component={Notification} options={{animation:'fade'}}/>
+      <Stack.Screen name='WebViewRules' component={WebViewForRules} options={{animation:'fade'}}/>
       
-      <Stack.Screen name='BallEdit' component={BallEditPage} options={{headerShown:false,animation:'fade'}}/>
-      <Stack.Screen name='BallViewCompleted' component={BallViewCompleted} options={{headerShown:false,animation:'fade_from_bottom'}}/>
-      <Stack.Screen name='HelpAndSupport' component={HelpAndSuppport} options={{headerShown:false,animation:'fade'}}/>
+      <Stack.Screen name='BallEdit' component={BallEditPage}/>
+      <Stack.Screen name='BallViewCompleted' component={BallViewCompleted}/>
+      <Stack.Screen name='HelpAndSupport' component={HelpAndSuppport}/>
 
     </Stack.Navigator>
     </BottomSheetModalProvider>
@@ -177,10 +138,10 @@ function MainStackNavigation(){
 function StackNavigation(){
   const user = auth().currentUser;
   return(<>
-    <Stack.Navigator screenOptions={{contentStyle:{backgroundColor:'#ffffff'},orientation:'portrait'}} >
-      <Stack.Screen name='RegOrLog' component={RegOrLog} options={{headerShown:false,animation:'fade'}}/>
-      {(!user || !user.displayName) &&<Stack.Screen name='Authentication' component={Authentication} options={{headerShown:false,animation:'slide_from_right'}}/>}
-      <Stack.Screen name='MainStackNavigation' component={MainStackNavigation} options={{headerShown:false,animation:'slide_from_right',detachPreviousScreen:true}} />
+    <Stack.Navigator screenOptions={{contentStyle:{backgroundColor:'#ffffff'},orientation:'portrait',headerShown:false,animation:'slide_from_right'}} >
+      <Stack.Screen name='RegOrLog' component={RegOrLog}/>
+      {(!user || !user.displayName) &&<Stack.Screen name='Authentication' component={Authentication}/>}
+      <Stack.Screen name='MainStackNavigation' component={MainStackNavigation} options={{detachPreviousScreen:true}} />
     </Stack.Navigator>
     <Toast/>
     </>
@@ -203,7 +164,7 @@ MainProfileContainer:{
   alignItems:'center',
   backgroundColor:'#121212',
   position:'absolute',
-  top:0,
+  top:-1,
   height:100,
   width:'100%',
   paddingLeft:13
@@ -217,7 +178,7 @@ ProfileImage:{
   marginRight:10
 },
 Name:{
-  color:'white',
+  color:'#ffffff',
   fontFamily:'Poppins-SemiBold',
   fontSize:14,
   paddingLeft:3
@@ -228,3 +189,94 @@ MainContainer2:{
   alignItems:'center'
 },
 })
+
+
+
+// const config = {
+//   animation: 'spring',
+//   config: {
+//     duration:200,
+//     // easing:Easing.cubic,
+//     stiffness: 1000,
+//     damping: 50,
+//     mass: 3,
+//     overshootClamping: true,
+//     restDisplacementThreshold: 0.01,
+//     restSpeedThreshold: 0.01,
+//   },
+// };
+// const closeConfig = {
+//   animation:'timing',
+//   config: {
+//     duration:100,
+//     easing:Easing.linear
+//   }
+// }
+
+
+// {/* <Stack.Navigator initialRouteName='Drawer' screenOptions={{
+//   // cardStyleInterpolator: ({ current, layouts }) => {
+//   //     return {
+//   //       cardStyle: {
+//   //         transform: [
+//   //           {
+//   //             translateX: current.progress.interpolate({
+//   //               inputRange: [0, 1],
+//   //               outputRange: [layouts.screen.width, 0],
+//   //             }),
+//   //           },
+//   //         ],
+//   //       },
+//   //     }
+//   //   }, transitionSpec: {open:config,close:closeConfig},
+//     headerShown:false,contentStyle: { backgroundColor: '#ffffff' }}}>
+// {/* <Stack.Navigator initialRouteName='Drawer' screenOptions={{contentStyle:{backgroundColor:'#ffffff'}}}> */}
+//   <Stack.Screen name='ContestSelection' component={ContestSelection} options={{detachPreviousScreen:true,
+//   animation:'slide_from_right',
+//   }}/>
+//   <Stack.Screen name='ContestDetailNavigation' component={ContestDetailNavigation} options={{
+//   animation:'slide_from_right',
+//   }}/>
+
+//   <Stack.Screen name='Drawer' component={MainDrawernavigation} options={{detachPreviousScreen:true,
+//     animation:'fade'
+//     }}/>
+//   <Stack.Screen name='AddCash' component={AddCash} options={{
+//   // animation:'slide_from_right',
+//   }}/>
+//   <Stack.Screen name='PaymentGateway' component={PaymentGateway} options={{
+//   // animation:'slide_from_right',
+//   }}/>
+//   <Stack.Screen name='Transactions' component={Transactions} options={{animation:'slide_from_right'}}/>
+//   <Stack.Screen name='SetCreator' component={SetCreator} options={{detachPreviousScreen:true,
+//   // animation:'slide_from_right',
+//   }}/>
+//   <Stack.Screen name='ContestDetailLeaderboard' component={ContestDetailLeaderboard} options={{
+//     // animation:'fade'
+//     }}/>
+//   <Stack.Screen name='LiveLeaderboard' component={LiveLeaderboard} options={{
+//     // animation:'fade'
+//     }}/>
+//   <Stack.Screen name='ScreenForMyContestTabNavigator' component={ScreenForMyContestTabNavigator} options={{
+//     // animation:'fade'
+//     }}/>
+//   <Stack.Screen name='MyMatchCompleted' component={MyContestsMatchDisplayOnClickCompletedPage} options={{
+//     // animation:'fade'
+//     }}/>
+//   <Stack.Screen name='AddEmail' component={AddEmail} options={{
+//   // animation:'slide_from_right',
+//   }}/>
+//   <Stack.Screen name='ReferAndWinExtension' component={ReferAndWinExtension} options={{animation:'slide_from_right'}}/>
+//   <Stack.Screen name='Withdraw' component={Withdraw} options={{animation:'slide_from_right'}}/>
+//   <Stack.Screen name='Notification' component={Notification} options={{
+//     // animation:'fade'
+//     }}/>
+//   <Stack.Screen name='WebViewRules' component={WebViewForRules} options={{
+//     // animation:'fade'
+//     }}/>
+  
+//   <Stack.Screen name='BallEdit' component={BallEditPage} options={{animation:'slide_from_right'}}/>
+//   <Stack.Screen name='BallViewCompleted' component={BallViewCompleted} options={{animation:'slide_from_right'}}/>
+//   <Stack.Screen name='HelpAndSupport' component={HelpAndSuppport} options={{animation:'slide_from_right'}}/>
+
+// </Stack.Navigator> */}

@@ -299,7 +299,7 @@ export default function BallSelection({navigation}) {
       handleStyle={{position:'absolute',alignSelf:'center'}}
       handleIndicatorStyle={{backgroundColor:'#ffffff'}}
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
-      <EntryCalculator MatchId={MatchId} TeamCode1={TeamCode1} TeamCode2={TeamCode2} ContestType={ContestType} MatchKey={MatchKey} Entry={Entry} uid={uid} selectedScores={selectedScores} Free={Free} navigation={()=>{navigation.navigate('ContestSelection',{Team1:Team1,Team2:Team2,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchId:MatchId,uid:uid,I1:I1,I2:I2,MatchLink:MatchLink})}} navigation2={(ja)=>navigation.navigate('AddCash',{add:'₹'+ja})} modalFix={()=>{setIsPriceModalFixed(true)}} disableModal={handleClosePress} error={(err,err2)=>{handleClosePress();showToast('error',err,err2)}} />
+      <EntryCalculator MatchId={MatchId} TeamCode1={TeamCode1} TeamCode2={TeamCode2} ContestType={ContestType} MatchKey={MatchKey} Entry={Entry} uid={uid} selectedScores={selectedScores} Free={Free} navigation={()=>{navigation.navigate('ContestSelection',{Team1:Team1,Team2:Team2,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchId:MatchId,uid:uid,I1:I1,I2:I2,MatchLink:MatchLink})}} navigation2={(ja)=>navigation.navigate('AddCash',{add:'₹'+Math.ceil(ja)})} modalFix={()=>{setIsPriceModalFixed(true)}} disableModal={handleClosePress} error={(err,err2)=>{handleClosePress();showToast('error',err,err2)}} />
     </BottomSheetModal>
     <Toast />
     </>

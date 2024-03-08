@@ -7,8 +7,8 @@ import firestore from '@react-native-firebase/firestore';
 import RenderWinning from './RenderWinning';
 import ContestDetailLeaderboard from './ContestDetailLeaderboard';
 import LiveLeaderboard from './MainTabPages/MyContests/LiveLeaderboard';
-import FastImage from 'react-native-fast-image';
 import { width } from '../Dimensions';
+import FetchScore from '../FetchScore';
 
 const Tab = createMaterialTopTabNavigator();
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -31,10 +31,9 @@ function ContestDetails({navigation}) {
   const [contestStatus,setContestStatus] = useState(null);
   const [refunded,setRefunded] = useState()
   const [newUser,setNewUser] = useState();
-  const [scoreData,setScoreData] = useState(null);
   const delay = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
 
-  useEffect(() => {if (scoreData||contestStatus||MaximumSpots-filledSpots<=0) LayoutAnimation.configureNext(customLayoutAnimation);}, [scoreData,contestStatus,filledSpots]);
+  useEffect(() => {if (contestStatus||MaximumSpots-filledSpots<=0) LayoutAnimation.configureNext(customLayoutAnimation);}, [contestStatus,filledSpots]);
   useFocusEffect(
     useCallback(() => {
       const contestListener = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').doc(MatchKey).onSnapshot(async (documentSnapshot) => {
@@ -47,20 +46,6 @@ function ContestDetails({navigation}) {
       const matchListener = firestore().collection('AllMatches').doc(MatchId).onSnapshot((documentSnapshot) => {
         const status = documentSnapshot.data().Status
         setStatus(status);
-        if ((status === 'Live' || status === 'Completed') && MatchLink) {
-          async function fetchScore() {
-            try {
-              const response = await fetch('https://get-cricket-score.vercel.app/score?url=' + MatchLink);
-              const data = await response.json();
-              setScoreData(data);
-            } catch (exception) {
-              fetchScore();
-            }
-          }
-          fetchScore();
-          // const scoreInterval = setInterval(() => fetchScore(), 90000);
-          // return () => clearInterval(scoreInterval);
-        }
       });
       const userListener = firestore().collection('users').doc(uid).onSnapshot((documentSnapshot) => {
         setNewUser(documentSnapshot.data().Contest);
@@ -70,34 +55,8 @@ function ContestDetails({navigation}) {
   )
 
   return ( <>
-    {(status==='Live' || status==='Completed') && scoreData!=null && <View style={{backgroundColor:'#1a1a1a',flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingTop:10}}>
-    <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-      <View style={{alignItems:'flex-start'}}>
-        <Text style={styles.LSTeamName}>{scoreData.Team1}</Text>
-        <View style={styles.LSImageScoreContainer}>
-          <FastImage source={{uri:I1}} style={styles.TeamLogoOne}/>
-          {scoreData.Score1!=" " && <><Text style={[styles.ScoreDataCurrentText,{marginLeft:10}]}>{(scoreData.Score1).slice(0,(scoreData.Score1).indexOf('(')-1)}</Text>
-          <Text style={[styles.LSOverText,{marginLeft:5}]}>{(scoreData.Score1).slice((scoreData.Score1).indexOf('('))}</Text></>}
-          {scoreData.Score1==" " && <Text style={[styles.ScoreDataCurrentText,{marginLeft:10}]}>Yet to bat</Text>}
-        </View>
-      </View>  
-      <View style={{alignItems:'flex-end'}}>
-        <Text style={styles.LSTeamName}>{scoreData.Team2}</Text>
-        <View style={styles.LSImageScoreContainer}>
-          {scoreData.Score2!=" " && <><Text style={[styles.LSOverText,{marginRight:5}]}>{(scoreData.Score2).slice((scoreData.Score2).indexOf('('))}</Text>
-          <Text style={[styles.ScoreDataCurrentText,{marginRight:10}]}>{(scoreData.Score2).slice(0,(scoreData.Score2).indexOf('(')-1)}</Text></>}
-          {scoreData.Score2==" " && <Text style={[styles.ScoreDataCurrentText,{marginRight:10}]}>Yet to bat</Text>}
-          <FastImage source={{uri:I2}} style={styles.TeamLogoOne}/>
-        </View>  
-      </View>  
-    </View>
-    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:-10}}>
-      <Text style={{color:'#109e00',fontFamily:'Poppins-SemiBold'}}>● </Text>
-      <Text style={styles.LSStatusText}>{status==='Live'?'Live':'Completed'}</Text>
-    </View>
-    <Text style={styles.LSConclusionText}>{scoreData.Status}</Text>
-    </View>}
 
+    {(status==='Live' || status==='Completed') && MatchLink && <FetchScore page={'Details'}  I1={I1} I2={I2} status={status} url={MatchLink}/>}
     <View style={styles.Card}>
       <View style={styles.PrizeEntryTextContainer}>
         <Text style={styles.PrizeText}>Prize Pool</Text>

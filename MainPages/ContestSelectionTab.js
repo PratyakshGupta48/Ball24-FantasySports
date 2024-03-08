@@ -6,6 +6,7 @@ import firestore from '@react-native-firebase/firestore';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import { SkeletonContestSelection } from '../SkeletonPlaceholder';
+import { width } from '../Dimensions';
 
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
 const customLayoutAnimation = {
@@ -30,7 +31,7 @@ export default function ContestSelectionTab({navigation}) {
   const [sortApplied,setSortApplied] = useState(false);  //Sorting
   const [sortedItemLength,setSortedItemsLength] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
-  const [sortingFor,setSOrtingFor] = useState()
+  const [sortingFor,setSOrtingFor] = useState();
   const delay = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
 
   const getNumberOfWinners = (item) => {
@@ -66,13 +67,13 @@ export default function ContestSelectionTab({navigation}) {
   };
 
   useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation);}, [fourOvers,sortApplied,sortedItemLength,sortOrder,sortingFor,refresh]);
-  useFocusEffect(
-    useCallback(() => {
+  // useFocusEffect(
+    useEffect(() => {
       setLoadingSpinner(true);
       setSortApplied(false);
       setSOrtingFor();
         const getContest = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').onSnapshot(async (QuerySnapshot) => {
-          await delay(200)
+          await delay(300)
           const FourOversContests = [];
           const FilteredAll = [[], [], [], [], [], [], []];
           setFourOvers([]);
@@ -99,6 +100,7 @@ export default function ContestSelectionTab({navigation}) {
               data: item,
             }))
           );
+          // await delay(200)
           setFourOvers(FourOversContests);
           setFourOversCopy(FourOversContests);
           setLoadingSpinner(false);
@@ -106,9 +108,9 @@ export default function ContestSelectionTab({navigation}) {
         const userListener = firestore().collection('users').doc(uid).onSnapshot((documentSnapshot) => {
           setNewUser(documentSnapshot.data().Contest);
         });
-        return () => { getContest(); userListener();};
+        return () => { getContest(); userListener();console.log('aa')};
     }, [refresh])
-  )
+  // )
 
   const CardFormat = useCallback(({item}) => (
     <TouchableWithoutFeedback onPress={()=>{navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.key,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDetails',Inning:item.Inning})}} style={{backgroundColor:'#ffffff'}}>
@@ -216,13 +218,16 @@ export default function ContestSelectionTab({navigation}) {
           </View>
         </View>
       )}
-      renderSectionFooter={()=>(<View style={{height:8,backgroundColor:'#f0f0f0',marginTop:15}}></View>)}
+      renderSectionFooter={()=>(<View style={{height:8,backgroundColor:'#f0f0f0',marginTop:30}}></View>)}
       refreshing={false}
       onRefresh={()=>{setRefresh(!refresh)}}
       stickySectionHeadersEnabled
-      initialNumToRender={10}
-      maxToRenderPerBatch={10}
-      windowSize={30}
+      initialNumToRender={7}
+      maxToRenderPerBatch={5}
+      windowSize={25}
+      // removeClippedSubviews
+      ItemSeparatorComponent={()=>(<View style={{height:15}}></View>)}
+      getItemLayout={(_, index) => ({length: 140 + 15, offset: (140 + 15) * index + 15, index})}
       style={{backgroundColor:'#ffffff',flex:1}}
     />}
     <TouchableWithoutFeedback onPress={()=>{navigation.navigate('SetCreator',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,I1:I1,I2:I2,uid:uid})}}>
@@ -242,7 +247,6 @@ const styles = StyleSheet.create({
     marginHorizontal:15,
     borderRadius:5,
     paddingHorizontal:10,
-    marginBottom:15
   },
   PrizeEntryTextContainer:{
     flexDirection:'row',
@@ -446,5 +450,18 @@ const styles = StyleSheet.create({
     fontFamily:'Poppins-Medium',
     fontSize:13,
     paddingLeft:10
+  },
+  LoadMoreText:{
+    color:'#1141c1',
+    fontFamily:'Poppins-Medium',
+    fontSize:15,
+    paddingHorizontal:4,
+    paddingVertical:2,
+    borderRadius:5,
+    borderColor:'#1141c1',
+    borderWidth:1,
+    textAlign:'center',
+    marginTop:20,
+    marginBottom:50
   }
 });

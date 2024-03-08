@@ -24,6 +24,7 @@ function Wallet({navigation}) {
   const [WinningAmount,setWinningAmount] = useState(null);
   const [DBCashBonus,setDBCashBonus] = useState(null);
   const [Pan,setPan] = useState(null);
+  const [email,setEmail] = useState(null)
   const [refresh,setRefresh] = useState(false);
   const isFocused = useIsFocused();
     
@@ -32,6 +33,7 @@ function Wallet({navigation}) {
       setAddedAmount(documentSnapshot.data().AddedAmount)
       setWinningAmount(documentSnapshot.data().WinningAmount)
       setDBCashBonus(documentSnapshot.data().DBCashBonus)
+      setEmail(documentSnapshot.data().Email)
       setPan(documentSnapshot.data().Pan)
     })
     return ()=>unsubscribe;
@@ -42,10 +44,13 @@ function Wallet({navigation}) {
       function openBottomSheet() {if (sheetRef2.current)sheetRef2.current.snapToIndex(0)}
       const handleClosePress2 = () => sheetRef2.current.close();
       const showToast = (type,text1,text2) => Toast.show({type: type,text1: text1,visibilityTime:5000,position:'top',topOffset:0,text2: text2});
-  
+      const currentDate = new Date();
+      const eighteenYearsAgo = new Date(currentDate);
+      eighteenYearsAgo.setFullYear(currentDate.getFullYear() - 18);
+
       const [name,setName] = useState();
       const [Pan,setPan] = useState();
-      const [date, setDate] = useState(new Date())
+      const [date, setDate] = useState(currentDate)
       const [open, setOpen] = useState(false)
       const [image,setImage] = useState(null)
       const [imageWidth, setImageWidth] = useState(0);
@@ -79,7 +84,7 @@ function Wallet({navigation}) {
       </View>
   
       const check = () => {
-        if((/^[a-z A-Z]+$/.test(name)&&/[A-Z]{5}[0-9]{4}[A-Z]{1}/.test(Pan) && date.toDateString()!=new Date().toDateString() && image && /[A-Za-z0-9'\.\-\s\,]/.test(flat) && /[A-Za-z0-9'\.\-\s\,]/.test(area) && /^[1-9][0-9]{5}$/.test(Pincode) && /[A-Za-z0-9'\.\-\s\,]/.test(city) && /[A-Za-z0-9'\.\-\s\,]/.test(state)))return true;
+        if((email!="" && /^[a-z A-Z]+$/.test(name)&&/[A-Z]{5}[0-9]{4}[A-Z]{1}/.test(Pan) && date.toDateString()!=new Date().toDateString() && image && /[A-Za-z0-9'\.\-\s\,]/.test(flat) && /[A-Za-z0-9'\.\-\s\,]/.test(area) && /^[1-9][0-9]{5}$/.test(Pincode) && /[A-Za-z0-9'\.\-\s\,]/.test(city) && /[A-Za-z0-9'\.\-\s\,]/.test(state)))return true;
         else return false;
       }
   
@@ -94,13 +99,16 @@ function Wallet({navigation}) {
             handleClosePress()
           }).catch(e=>{showToast('error','Something went wrong!','Please try again later.');setLoading(false);handleClosePress()});
         }
-        else showToast('error','Invalid Details!','Please check the details and try again.');
+        else showToast('error','Incomplete or Invalid Details!','Please check the details and try again.');
       }
   
       return(<>
         <Icon name='card-account-details-outline' size={28} color='#1a1a1a' style={{alignSelf:'center',marginTop:15}}></Icon>
         <Text style={styles.VerifyPanText}> Verify PAN</Text>
         <BottomSheetScrollView>
+          <Text style={styles.EnterNameTextBank}>Email</Text>
+          <Text onPress={()=>{if(email==""){;handleClosePress();navigation.navigate('AddEmail')}}} style={[styles.PhoneNumberInput,{fontFamily: 'Poppins-Regular',marginTop:0,marginBottom:20,color:email!=""?'#121212':'#969696'}]}>{email!=""?(email):'Verify Email'}</Text>
+
           <Text style={styles.EnterNameTextBank}>Name</Text>
           <TextInput
             style={[styles.PhoneNumberInput,{fontFamily: 'Poppins-Regular',marginTop:0,marginBottom:20}]}
@@ -127,7 +135,7 @@ function Wallet({navigation}) {
   
           <Text style={styles.EnterNameTextBank}>Date of Birth</Text>
           <Text onPress={()=>{setOpen(true)}} style={[styles.PhoneNumberInput,{fontFamily: 'Poppins-Regular',marginTop:0,marginBottom:20,color:date.toDateString()==new Date().toDateString()?'#969696':'#121212'}]}>{date.toDateString()==new Date().toDateString()?'dd / mm / yyyy':date.toLocaleDateString()}</Text>
-          <DatePicker mode='date' modal theme='light' open={open} date={date} maximumDate={new Date()} onConfirm={(date) => { setOpen(false) ;setDate(date) ;}}onCancel={() => setOpen(false)}/>
+          <DatePicker mode='date' modal theme='light' open={open} date={date} maximumDate={eighteenYearsAgo} onConfirm={(date) => { setOpen(false) ;setDate(date) ;}}onCancel={() => setOpen(false)}/>
   
           <Text style={styles.EnterNameTextBank}>PAN card front side</Text>
           <Text onPress={openBottomSheet} style={[styles.PhoneNumberInput,{fontFamily: 'Poppins-Regular',marginTop:0,marginBottom:image?5:20,color:image?'#109e38':'#969696'}]}>{image?'✔ PAN Card Added':'+ Add PAN Card Image'}</Text>
@@ -193,7 +201,7 @@ function Wallet({navigation}) {
             selectionColor="#969696"
             maxLength={50}
           /> 
-          <Text style={styles.ImportantNoteHeading}>*Important Note-{'\n'}<Text style={{fontSize:12}}>Make sure that you have entered correct details for PAN Card. {'\n'}Verification will take 1-3 days.</Text></Text>
+          <Text style={styles.ImportantNoteHeading}>*Important Note{'\n'}<Text style={{fontSize:12}}>Make sure that you have entered correct details for PAN Card. {'\n'}Verification will take 1-3 days.</Text></Text>
         </BottomSheetScrollView>
   
         {loading?<ActivityIndicator color={'#1141c1'} size={'small'} />:<Text style={[styles.AddButtonText,{backgroundColor:check()?'#109e38':'#999999',marginBottom:15,marginTop:15}]} onPress={HandlePan}>Verify Pan</Text>}
@@ -243,12 +251,8 @@ function Wallet({navigation}) {
           </View>
         </View>
         <TouchableWithoutFeedback onPress={()=>{
-          if(Pan==="Not Verified"){
-            handlePresentModalPress()
-          }
-          else if(Pan==="Verified"){
-            navigation.navigate('Withdraw')
-          }
+          if(Pan==="Not Verified") handlePresentModalPress()
+          else if(Pan==="Verified") navigation.navigate('Withdraw')
         }}>
           <View style={styles.WithdrawTextContainer} elevation={2}>
             <Icon name='bank-transfer-in' color={'#666666'} size={35} style={{marginRight:15}}/>
