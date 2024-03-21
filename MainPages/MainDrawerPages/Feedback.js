@@ -37,7 +37,7 @@ export default function Feedback({navigation}) {
               setLoadingSpinner(false)
               setFeedback('')
               alert('Thank you for your valuable feedback')
-            })
+            }).catch(e=>{showToast('error', 'Something Went Wrong!', 'Please retry')})
           }
         }}>SUBMIT</Text>
       </View>

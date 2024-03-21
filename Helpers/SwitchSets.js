@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore';
 import functions from '@react-native-firebase/functions';
 import { BottomSheetScrollView, BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import Toast from 'react-native-toast-message';
 
 const colors = {"0":'#006269',"1":'#006269',"2":'#006269',"3":'#006269',"4":'#1e8e3e',"5":'#006269',"6":'#1e8e3e',"1WD":'#185ccc',"1NB":'#185ccc',"2NB":'#185ccc',"3NB":'#185ccc',"4NB":'#185ccc',"5NB":'#185ccc',"7NB":'#185ccc',"W":'#d93025'}
 const skip = ["1WD","1NB","2NB","3NB","4NB","5NB","7NB"];
@@ -25,7 +26,8 @@ export default function SwitchSets({MatchId,uid,MatchKey,disableRefresh,oldSet,I
   const [selectedItemIndex,setSelectedItemIndex] = useState(-1);
   const [loadingSpinner,setLoadingSpinner] = useState(true);
   const [textVisible,setTextVisible] = useState(false);
-  
+  const showToast = (type,text1,text2) => Toast.show({type: type,text1: text1,visibilityTime:2500,position:'top',topOffset:20,text2: text2});
+
   useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation)}, [setsData,textVisible]);
   useEffect(()=>{
     setTimeout(() => {
@@ -48,7 +50,7 @@ export default function SwitchSets({MatchId,uid,MatchKey,disableRefresh,oldSet,I
         setLoadingSpinner(false);
         setTextVisible(true);
         disableRefresh()
-      });
+      }).catch(e=>{showToast('error', 'Something Went Wrong!', 'Please retry')})
     }
   }
 

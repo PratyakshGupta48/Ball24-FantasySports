@@ -73,7 +73,7 @@ export default function AddEmail({navigation}) {
             setShowSpinner("")
             showToast('success','SUccessfully Verified','Your email has been verified successfully.Redirecting...');
             setTimeout(() => navigation.pop(), 3000);
-          });
+          }).catch(e=>error('Oops! Something Went Wrong', 'We encountered an error. Please try again later.'));
         }
         else showToast('error','Invalid OTP',"Please enter a valid OTP and try again.")
       }}>CONFIRM OTP</Text>:<ActivityIndicator hidesWhenStopped={true} color="#1141c1" size="small"  animating={true} style={{marginTop:32}}/>}

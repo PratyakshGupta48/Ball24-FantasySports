@@ -149,7 +149,7 @@ export default function Profile({navigation}) {
             setImage(item.l)
             auth().currentUser.updateProfile({photoURL:item.l})
             const updateImage = functions().httpsCallable('ProfileImage')
-            updateImage({uid:uid,url:item.l})
+            updateImage({uid:uid,url:item.l}).catch(e=>error('Oops! Something Went Wrong', 'We encountered an error. Please try again later.'));
           }}>
             <Image style={styles.AvatarChooseImage} source={{uri:item.l}}></Image>
           </TouchableWithoutFeedback>

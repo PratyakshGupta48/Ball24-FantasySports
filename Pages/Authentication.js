@@ -118,7 +118,7 @@ function Authentication ({navigation}) {
         await auth().currentUser.updateProfile({displayName: name,photoURL:url});
         navigation.replace('MainStackNavigation',{screen: 'Drawer',params: {screen: 'MainTab'}});
         const NameEnteredCreateDoc = functions().httpsCallable('NameEnteredCreateDoc');
-        await NameEnteredCreateDoc({ uid:auth().currentUser.uid, phoneNumber, name, refferedBy: referCode || null, Id:referExists?referExists.docs[0].id:null,photo:url});
+        await NameEnteredCreateDoc({ uid:auth().currentUser.uid, phoneNumber, name, refferedBy: referCode || null, Id:referExists?referExists.docs[0].id:null,photo:url}).catch(e=>error('Oops! Something Went Wrong', 'We encountered an error. Please contact support@ball24.in.'));
       })
     } catch (error) {
       showError('Check your internet connection');
