@@ -91,7 +91,7 @@ export default function Profile({navigation}) {
             <View style={styles.ReferContainer} elevation={2}>
               <View style={styles.ImagesContainerOne}>
                 <View style={styles.ImageiContiner}>
-                  <Image source={require('../../accessories/ReferImages/ball24.png')} style={{width:66,height:44}}></Image>
+                  <Image source={require('../../accessories/ReferImages/cpy2.png')} style={{width:50,height:44}}></Image>
                   <Text style={styles.PrizeTitle}>₹50 Ball24 Cash</Text>
                 </View>
                 <View style={styles.ImageiContiner}>

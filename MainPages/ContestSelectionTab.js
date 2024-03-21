@@ -6,7 +6,7 @@ import firestore from '@react-native-firebase/firestore';
 import FastImage from 'react-native-fast-image';
 import LinearGradient from 'react-native-linear-gradient';
 import { SkeletonContestSelection } from '../SkeletonPlaceholder';
-import { width } from '../Dimensions';
+// import { width } from '../Dimensions';
 
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
 const customLayoutAnimation = {
@@ -72,7 +72,7 @@ export default function ContestSelectionTab({navigation}) {
       setLoadingSpinner(true);
       setSortApplied(false);
       setSOrtingFor();
-        const getContest = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').onSnapshot(async (QuerySnapshot) => {
+        firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').get().then(async (QuerySnapshot) => {
           await delay(300)
           const FourOversContests = [];
           const FilteredAll = [[], [], [], [], [], [], []];
@@ -103,12 +103,13 @@ export default function ContestSelectionTab({navigation}) {
           // await delay(200)
           setFourOvers(FourOversContests);
           setFourOversCopy(FourOversContests);
+          // await delay(300)
           setLoadingSpinner(false);
         });
         const userListener = firestore().collection('users').doc(uid).onSnapshot((documentSnapshot) => {
           setNewUser(documentSnapshot.data().Contest);
         });
-        return () => { getContest(); userListener();console.log('aa')};
+        return () => {userListener();};
     }, [refresh])
   // )
 
@@ -199,7 +200,7 @@ export default function ContestSelectionTab({navigation}) {
         <Text style={styles.ClearText} onPress={()=>{setRefresh(!refresh)}}>CLEAR</Text>
       </View>
     </View>}
-    {!loadingSpinner && <SectionList
+    <SectionList
       sections={fourOvers}       
       keyExtractor={(_,index) => index}
       renderItem={CardFormat}         
@@ -222,14 +223,14 @@ export default function ContestSelectionTab({navigation}) {
       refreshing={false}
       onRefresh={()=>{setRefresh(!refresh)}}
       stickySectionHeadersEnabled
-      initialNumToRender={7}
-      maxToRenderPerBatch={5}
-      windowSize={25}
+      initialNumToRender={10}
+      maxToRenderPerBatch={10}
+      windowSize={30}
       // removeClippedSubviews
       ItemSeparatorComponent={()=>(<View style={{height:15}}></View>)}
       getItemLayout={(_, index) => ({length: 140 + 15, offset: (140 + 15) * index + 15, index})}
       style={{backgroundColor:'#ffffff',flex:1}}
-    />}
+    />
     <TouchableWithoutFeedback onPress={()=>{navigation.navigate('SetCreator',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,I1:I1,I2:I2,uid:uid})}}>
       <View style={styles.NextButtonContainerFinal} elevation={2}>
         <Icon name='plus-circle-outline' color={'#f6f7fb'} size={18}/>

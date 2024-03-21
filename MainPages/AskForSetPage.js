@@ -26,7 +26,7 @@ export default function AskForSetPage({navigation}) {
   const handlePresentModalPress = useCallback(() => {sheetRef1.current?.present();}, []);
   const handleClosePress = () => sheetRef1.current.close()
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior={isPriceModalFixed?'none':'close'}/>);
-  const {MatchId,TeamCode1,TeamCode2,Team1,Team2,I1,I2,ContestType,MatchKey,Entry,uid,MatchLink,Free} = useRoute().params;
+  const {MatchId,TeamCode1,TeamCode2,ContestType,MatchKey,Entry,uid,Free} = useRoute().params;
   const [selectedItemIndices, setSelectedItemIndices] = useState([]);
   const [setsData,setSetsData] = useState(null);
   const [refresh,setRefresh] = useState(false);
@@ -88,22 +88,31 @@ export default function AskForSetPage({navigation}) {
             </View>
           </View>
         </TouchableWithoutFeedback>
+
         <View style={styles.SetMainContainer}>
-          <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={{marginHorizontal:12,marginVertical:12}}>
-            {Set.map((n,index) => 
-              <View key={index} style={[styles.TabPattiItemContainer2,{backgroundColor:colors[n]}]}>
-                {!skip.includes(n) && <Text style={styles.BallNumberingText0}>{(++i)}</Text>}
-                <Text style={styles.TabPattiText2}>{n}</Text>
+        <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={{marginHorizontal:12,marginVertical:12}}>
+          {Set.map((n,index) => {
+            const item = !n.toString().endsWith('#') && !n.toString().endsWith('*') ? n : n.slice(0, -1);
+            const backgroundColor = colors[item];
+            const multiplierText = n.toString().endsWith('#') ? '2X' : (n.toString().endsWith('*') ? '1.5X' : '');
+            return (
+              <View key={index}>
+                <View style={[styles.TabPattiItemContainer2, {backgroundColor}]}>
+                  {!skip.includes(item) && <Text style={styles.BallNumberingText0}>{(++i)}</Text>}
+                  <Text style={styles.TabPattiText2}>{item}</Text>
+                </View>
+                <Text style={styles.MultiplierText}>{multiplierText}</Text>
               </View>
-            )}
-          </ScrollView>
-          <View style={styles.ExtraDetContainer}>
-            <Text style={styles.ExtraDetHeadText}>Total Runs: </Text>
-            <Text style={[styles.ExtraDetAnsText,{paddingRight:15}]}>{totalRuns}</Text>
-            <Text style={[styles.ExtraDetHeadText,{paddingLeft:15}]}>Boundaries: </Text>  
-            <Text style={styles.ExtraDetAnsText}>{`${Set.filter(item => item === '6' || item === '4').length} (${Set.filter(item => item === '4' || item === '6').join(',')})`}</Text>      
-          </View> 
-        </View>
+            );
+          })}
+        </ScrollView>
+        <View style={styles.ExtraDetContainer}>
+          <Text style={styles.ExtraDetHeadText}>Total Runs: </Text>
+          <Text style={[styles.ExtraDetAnsText,{paddingRight:15}]}>{totalRuns}</Text>
+          <Text style={[styles.ExtraDetHeadText,{paddingLeft:15}]}>Boundaries: </Text>  
+          <Text style={styles.ExtraDetAnsText}>{`${Set.filter((item) =>['6', '4', '6#', '6*', '4#', '6*'].includes(item)).length} (${Set.filter((item) =>['4', '6', '6#', '6*', '4#', '6*'].includes(item)).join(',')})`}</Text>
+        </View> 
+      </View>
       </ImageBackground>
       </>
     )
@@ -287,5 +296,11 @@ const styles = StyleSheet.create({
     color: '#dedede',
     fontFamily: 'Poppins-SemiBold',
     fontSize: 14,
+  },
+  MultiplierText: {
+    fontFamily: 'Poppins-Medium',
+    textAlign: 'center',
+    fontSize: 11,
+    color: '#fafcff',
   },
 });

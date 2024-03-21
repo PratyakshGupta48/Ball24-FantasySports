@@ -3,7 +3,6 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 import { View, Text, StyleSheet, LayoutAnimation, UIManager, Platform } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import { useFocusEffect } from '@react-navigation/native';
 
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
 const customLayoutAnimation = {
@@ -25,27 +24,25 @@ const FetchScore = ({page,url,I1,I2,status}) => {
   const [result,setResult] = useState('');
   const delay = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
   useEffect(() => {if(team1Name!='')LayoutAnimation.configureNext(customLayoutAnimation);}, [team1Name]);
-  // useFocusEffect(
-    useEffect(() => {
-      if(status=='Live'){
-        const fetchData = async () => {
-          await delay(1000);
-          try {
-            const response = await axios.get(url);
-            const htmlCode = response.data;
-            const $ = cheerio.load(htmlCode);
-            setTeam1Name($('.team1-score-strip .country').text().trim());
-            setTeam1Score($('.team1-score-strip .score').text().trim() + $('.team1-score-strip .overs-info').text().trim());
-            setTeam2Name($('.team2-score-strip .country').text().trim());
-            setTeam2Score($('.team2-score-strip .score').text().trim() + $('.team2-score-strip .overs-info').text().trim());
-            setResult($('.match-result[data="data.info"]').text().trim()); 
-            console.log('refetch') 
-          } catch (error) {}
-        };
-        fetchData();
-      }
-    }, [])
-  // )
+  useEffect(() => {
+    if(status=='Live' || status=='Completed'){
+      const fetchData = async () => {
+        await delay(1000);
+        try {
+          const response = await axios.get(url);
+          const htmlCode = response.data;
+          const $ = cheerio.load(htmlCode);
+          setTeam1Name($('.team1-score-strip .country').text().trim());
+          setTeam1Score($('.team1-score-strip .score').text().trim() + $('.team1-score-strip .overs-info').text().trim());
+          setTeam2Name($('.team2-score-strip .country').text().trim());
+          setTeam2Score($('.team2-score-strip .score').text().trim() + $('.team2-score-strip .overs-info').text().trim());
+          setResult($('.match-result[data="data.info"]').text().trim()); 
+        } catch (error) {}
+      };
+      fetchData()
+    }
+  }, [])
+
 
   return (<>
     {team1Name!='' && <View style={{backgroundColor:'#1a1a1a',flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingTop:10}}>

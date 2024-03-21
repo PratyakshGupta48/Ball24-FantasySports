@@ -22,7 +22,7 @@ export default function HelpAndSuppport({navigation}) {
       <Text style={styles.ContactUsText}>CONTACT US :</Text>
         <Text style={styles.EmailUsText} onPress={handleEmail}>Email Us</Text>
         <Text style={[styles.YouCanText,{paddingTop:10}]}>support@ball24.in{'\n'}</Text>
-        <Text style={[styles.YouCanText,{paddingTop:5}]}>Address: Ball24 Main Unit {'\n'} Laxman Chowk,Park Road {'\n'} Dehradun,Uttarakhand-248001</Text>
+        {/* <Text style={[styles.YouCanText,{paddingTop:5}]}>Address: Ball24 Main Unit {'\n'} Laxman Chowk,Park Road {'\n'} Dehradun,Uttarakhand-248001</Text> */}
         <Text style={[styles.YouCanText,{marginTop:37}]}>You can also message us your query on our social media handles</Text>
         <View style={styles.MainIconContainer}>
           <View style={styles.IconContainerSmall}>

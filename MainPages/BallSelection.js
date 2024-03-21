@@ -1,14 +1,16 @@
 import React, {useEffect, useState,useCallback,useRef} from 'react';
 import {View,Text,TouchableWithoutFeedback,ScrollView,StyleSheet,LayoutAnimation,UIManager,Platform} from 'react-native';
 import {useRoute} from '@react-navigation/native';
-import {height} from '../Dimensions';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore'; 
 import FastImage from 'react-native-fast-image';
 import Modal from "react-native-modal";
 import EntryCalculator from './EntryCalculator';
 import Toast from 'react-native-toast-message';
-import {BottomSheetModal,BottomSheetBackdrop} from '@gorhom/bottom-sheet';
+import {BottomSheetModal,BottomSheetBackdrop, BottomSheetScrollView} from '@gorhom/bottom-sheet';
+import axios from 'axios';
+import cheerio from 'cheerio';
+import styles from '../Styles/BallSelection_SetCreator_Styles';
 
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
 const customLayoutAnimation = {
@@ -27,6 +29,8 @@ export default function BallSelection({navigation}) {
   const sheetRef1 = useRef(null);
   const handlePresentModalPress = useCallback(() => {sheetRef1.current?.present();}, []);
   const handleClosePress = () => sheetRef1.current.close()
+  const sheetRef2 = useRef(null);
+  const handlePresentModalPress2 = useCallback(() => {sheetRef2.current?.present();}, []);
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior={isPriceModalFixed?'none':'close'}/>);
   const {MatchId, TeamCode1, TeamCode2, Team1, Team2, I1, I2,ContestType, MatchKey, MatchLink, Entry, uid, Free, Inning, Overs} = useRoute().params;
   const [selectedScores,setSelectedScores] = useState(null);
@@ -37,6 +41,9 @@ export default function BallSelection({navigation}) {
   const [wideShown,showWide] = useState(false);
   const [wideNoBallShown,setWideNoBallShown] = useState(true);
   const [scoreData,setScoreData] = useState(null);
+  const [starBall,setStarBall] = useState([]);
+  const [bonusBall,setBonusBall] = useState([]);
+
   const colors = {null:'#ffffff',"0":'#006269',"1":'#006269',"2":'#006269',"3":'#006269',"4":'#1e8e3e',"5":'#006269',"6":'#1e8e3e',"1WD":'#185ccc',"1NB":'#185ccc',"2NB":'#185ccc',"3NB":'#185ccc',"4NB":'#185ccc',"5NB":'#185ccc',"7NB":'#185ccc',"W":'#d93025'}
   const skip = ["1WD","1NB","2NB","3NB","4NB","5NB","7NB"];
   const FreeHitCheck = ["1NB","2NB","3NB","4NB","5NB","7NB"];
@@ -59,7 +66,11 @@ export default function BallSelection({navigation}) {
       const data = documentSnapshot.data();
       if (data) for (let i = 1; i <= documentSnapshot.data().Count; i++) transformedData.push(data['S' + i]);
     });
-    const outputArray = scores.map(innerArray => {
+    let copy = JSON.parse(JSON.stringify(scores));
+    // # represents 2X  ,  * represents 1.5X
+    (copy[starBall[0]][starBall[1]])[0] = (copy[starBall[0]][starBall[1]])[0]+'#';
+    (copy[bonusBall[0]][bonusBall[1]])[0] = (copy[bonusBall[0]][bonusBall[1]])[0]+'*'
+    const outputArray = copy.map(innerArray => {
       const newObj = {};
       innerArray.forEach((item, index) => {
         newObj[index] = item[0];
@@ -79,32 +90,29 @@ export default function BallSelection({navigation}) {
     if(foundMatch==-1) handlePresentModalPress()
     else showToast('error','Duplicate Sets Found!',`The current set matches an existing set S${foundMatch+1}`)
   }
-
-  useEffect(() => {if(scoreData||isModalVisible||!isModalVisible) LayoutAnimation.configureNext(customLayoutAnimation)}, [scoreData,isModalVisible]);
-  useEffect(() => {
-    setIsPriceModalFixed(false)
-    const matchListener = firestore().collection('AllMatches').doc(MatchId).onSnapshot((documentSnapshot) => {
-      setStatus(documentSnapshot.data().Status);
-      if (documentSnapshot.data().Status === 'Live' && MatchLink) {
-        async function fetchScore() {
-          try {
-            const response = await fetch('https://get-cricket-score.vercel.app/score?url=' + MatchLink);
-            const data = await response.json();
-            setScoreData(data);
-          } catch (exception) {
-            fetchScore();
-          }
-        }
-        fetchScore();
-        // const scoreInterval = setInterval(() => {
-        //   fetchScore();
-        // }, 90000);
-        // return () => clearInterval(scoreInterval);
-      }
-    });
-    return () => {matchListener();}
-  }, []);
   
+  useEffect(() => {if(scoreData||isModalVisible||!isModalVisible) LayoutAnimation.configureNext(customLayoutAnimation)}, [scoreData,isModalVisible]);
+  // useEffect(() => {
+  //   setIsPriceModalFixed(false)
+  //   firestore().collection('AllMatches').doc(MatchId).get().then(async (documentSnapshot) => {
+  //     setStatus(documentSnapshot.data().Status);
+  //     const fetchData = async () => {
+  //       try {
+  //         const response = await axios.get(MatchLink);
+  //         const htmlCode = response.data;
+  //         const $ = cheerio.load(htmlCode);
+  //         setScoreData({
+  //           Team1:$('.team1-score-strip .country').text().trim(),
+  //           Team2:$('.team2-score-strip .country').text().trim(),
+  //           Score1:$('.team1-score-strip .score').text().trim() + $('.team1-score-strip .overs-info').text().trim(),
+  //           Score2:$('.team2-score-strip .score').text().trim() + $('.team2-score-strip .overs-info').text().trim(),
+  //           Status:$('.match-result[data="data.info"]').text().trim()
+  //         })
+  //       } catch (error) {}
+  //     };
+  //     if(documentSnapshot.data().Status=='Live' && MatchLink)fetchData();
+  //   });
+  // }, []);
   
   const ScoreOption = useCallback((image, label ,style ,textStyle,number)=>(
     <TouchableWithoutFeedback onPress={()=>{
@@ -138,11 +146,9 @@ export default function BallSelection({navigation}) {
       </View>
     </TouchableWithoutFeedback>
   ));
-  
   const allBallsFilled = scores.flat(Infinity).filter((value) => value === null).length;
-  
   return(<>
-    <View style={styles.MainDetailsContainer}>
+    <View style={styles2.MainDetailsContainer}>
       {scoreData==null && <View style={styles.TWholeContainer}>
         <View style={[styles.BallLeftMainContainer,{marginLeft:15,alignItems:'flex-start',}]}>
           <Text style={styles.BallsLeftBallsText}>Balls</Text>
@@ -167,15 +173,15 @@ export default function BallSelection({navigation}) {
           <Text style={[styles.BallsLeftBallsMainText,{marginRight:4}]}>{scores.flat().map(item => item[0] && item[0].charAt(0)).filter(item => item !== null && !isNaN(item)).reduce((sum, item) => sum + parseInt(item), 0)}</Text>
         </View>
       </View>}
-      {status==='Live' && scoreData!=null && <View style={{flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingTop:10}}>
+      {/* {status==='Live' && scoreData!=null && <View style={{flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingTop:10}}>
         <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
           <View style={{alignItems:'flex-start'}}>
-            <Text style={styles.LSTeamName}>{scoreData.Team1}</Text>
-            <View style={styles.LSImageScoreContainer}>
+            <Text style={styles2.LSTeamName}>{scoreData.Team1}</Text>
+            <View style={styles2.LSImageScoreContainer}>
               <FastImage source={{uri:I1}} style={styles.TeamLogoOne}/>
-              {scoreData.Score1!=" " && <><Text style={[styles.ScoreDataCurrentText,{marginLeft:10}]}>{(scoreData.Score1).slice(0,(scoreData.Score1).indexOf('(')-1)}</Text>
-              <Text style={[styles.LSOverText,{marginLeft:5}]}>{(scoreData.Score1).slice((scoreData.Score1).indexOf('('))}</Text></>}
-              {scoreData.Score1==" " && <Text style={[styles.ScoreDataCurrentText,{marginLeft:10}]}>Yet to bat</Text>}
+              {scoreData.Score1!=" " && <><Text style={[styles2.ScoreDataCurrentText,{marginLeft:10}]}>{(scoreData.Score1).slice(0,(scoreData.Score1).indexOf('(')-1)}</Text>
+              <Text style={[styles2.LSOverText,{marginLeft:5}]}>{(scoreData.Score1).slice((scoreData.Score1).indexOf('('))}</Text></>}
+              {scoreData.Score1==" " && <Text style={[styles2.ScoreDataCurrentText,{marginLeft:10}]}>Yet to bat</Text>}
             </View>
             <View style={[styles.BallLeftMainContainer,{marginLeft:15,alignItems:'flex-start',}]}>
           <Text style={styles.BallsLeftBallsText}>Balls</Text>
@@ -186,11 +192,11 @@ export default function BallSelection({navigation}) {
         </View>
           </View>  
           <View style={{alignItems:'flex-end'}}>
-            <Text style={styles.LSTeamName}>{scoreData.Team2}</Text>
-            <View style={styles.LSImageScoreContainer}>
-              {scoreData.Score2!=" " && <><Text style={[styles.LSOverText,{marginRight:5}]}>{(scoreData.Score2).slice((scoreData.Score2).indexOf('('))}</Text>
-              <Text style={[styles.ScoreDataCurrentText,{marginRight:10}]}>{(scoreData.Score2).slice(0,(scoreData.Score2).indexOf('(')-1)}</Text></>}
-              {scoreData.Score2==" " && <Text style={[styles.ScoreDataCurrentText,{marginRight:10}]}>Yet to bat</Text>}
+            <Text style={styles2.LSTeamName}>{scoreData.Team2}</Text>
+            <View style={styles2.LSImageScoreContainer}>
+              {scoreData.Score2!=" " && <><Text style={[styles2.LSOverText,{marginRight:5}]}>{(scoreData.Score2).slice((scoreData.Score2).indexOf('('))}</Text>
+              <Text style={[styles2.ScoreDataCurrentText,{marginRight:10}]}>{(scoreData.Score2).slice(0,(scoreData.Score2).indexOf('(')-1)}</Text></>}
+              {scoreData.Score2==" " && <Text style={[styles2.ScoreDataCurrentText,{marginRight:10}]}>Yet to bat</Text>}
               <FastImage source={{uri:I2}} style={styles.TeamLogoOne}/>
             </View> 
             <View style={[styles.BallLeftMainContainer,{marginRight:15,alignItems:'flex-end',}]}>
@@ -201,10 +207,10 @@ export default function BallSelection({navigation}) {
         </View>
         <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:-55}}>
           <Text style={{color:'#109e00',fontFamily:'Poppins-SemiBold'}}>● </Text>
-          <Text style={styles.LSStatusText}>{'Live'}</Text>
+          <Text style={styles2.LSStatusText}>{'Live'}</Text>
         </View>
-        <Text style={styles.LSConclusionText}>{scoreData.Status}</Text>
-      </View>}
+        <Text style={styles2.LSConclusionText}>{scoreData.Status}</Text>
+      </View>} */}
         
       <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={{height:40,marginHorizontal:12,marginTop:34,alignSelf:'center',marginBottom:10}}>
         {scores.map((n, index) => {
@@ -248,7 +254,7 @@ export default function BallSelection({navigation}) {
                 <View style={[styles.PickerContainer,(ind>0 && isFreeHit(index,ind))?{paddingVertical:13}:{paddingVertical:9}]}>
                 {ind>0 && isFreeHit(index, ind) && <FastImage source={require('../accessories/DreamBallLogos/FH.png')} style={{height:12,aspectRatio:500/100,borderTopLeftRadius:5,position:'absolute',top:-5.5,left:-0.5,opacity:1}}/>}
                   <View style={common}>
-                    {isSkip && <Text style={styles.BallNumberingText}>{index + 1}</Text>}
+                    <Text style={styles.BallNumberingText}>{isSkip?index + 1:''}</Text>
                     <Text style={styles.BallNameText}>{ballName}</Text>
                   </View>
                   <Icon name="chevron-down" color="#1c1c1c" size={22} />
@@ -286,7 +292,50 @@ export default function BallSelection({navigation}) {
         </ScrollView>
       </View>
     </Modal>
-    <Text onPress={()=>{if (allBallsFilled==0)NextButtonTouched()}} style={allBallsFilled==0 ?[styles.NextButtonText,{backgroundColor:'#009e00'}]:styles.NextButtonText}>Next</Text>
+    <Text onPress={()=>{if (allBallsFilled==0){handlePresentModalPress2();setStarBall([]);setBonusBall([])}}} style={allBallsFilled==0 ?[styles.NextButtonText,{backgroundColor:'#009e00'}]:styles.NextButtonText}>Next</Text>
+
+    <BottomSheetModal
+      ref={sheetRef2}
+      snapPoints={['98%']}
+      enablePanDownToClose={true}
+      enableOverDrag={true}
+      handleStyle={{position:'absolute',alignSelf:'center'}}
+      handleIndicatorStyle={{backgroundColor:'#a1a1a1'}}
+      backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}
+      backdropComponent={renderBackdrop}><>
+        <View style={{backgroundColor:'#f5f5f5',borderTopLeftRadius:13,borderTopRightRadius:13,paddingTop:20,paddingBottom:12}}>
+          <Text style={styles.ChooseText}>Choose your Star and Bonus Score</Text>
+          <Text style={[styles.ChooseText,{fontSize:12,fontFamily:'Poppins-Medium'}]}>Star Score gets 2X, Bonus Score gets 1.5X points</Text>
+        </View>
+        <View style={styles.ChooseHeadingsContainer}>
+          <Text style={styles.ChooseHeadings}> SCORE          POINTS</Text>
+          <Text style={styles.ChooseHeadings}>STAR     BONUS</Text>
+        </View>
+        <BottomSheetScrollView style={{ backgroundColor: '#ffffff',paddingHorizontal:12,paddingTop:10 }}>
+            {scores.map((n, index) => {
+              const renderItems = n.map((item, ind) => {
+                const [score, ballName] = item;
+                const isSkip = !skip.includes(score);
+                return (
+                  <View key={ind} style={[styles.PickerContainer2,(ind>0 && isFreeHit(index,ind))?{paddingVertical:5}:{paddingVertical:10}]}>
+                  {ind>0 && isFreeHit(index, ind) && <FastImage source={require('../accessories/DreamBallLogos/FH.png')} style={{height:12,aspectRatio:500/100,borderTopLeftRadius:5,position:'absolute',top:-5.5,left:-0.5,opacity:1}}/>}
+                    <View style={common}>
+                      <Text style={[styles.BallNumberingText,{paddingRight:0}]}>{isSkip?index + 1 :''}</Text>
+                      <Text style={styles.BallNameText}>{ballName}</Text>
+                    </View>
+                    <View style={common}>
+                      <Text onPress={()=>{if(starBall[0]==index && starBall[1]==ind)setStarBall([]);else if(bonusBall[0]==index && bonusBall[1]==ind){setBonusBall([]);setStarBall([index,ind]);} else setStarBall([index,ind])}} style={[ styles.StarBonusCircle,{borderColor:(starBall[0]==index && starBall[1]==ind)?'#1a1a1a':'#a1a1a1',paddingHorizontal:(starBall[0]==index && starBall[1]==ind)?9:12.5,marginRight:25,color:(starBall[0]==index && starBall[1]==ind)?'#f5f5f5':'#a1a1a1',backgroundColor:(starBall[0]==index && starBall[1]==ind)?'#1a1a1a':'#ffffff'}]}>{(starBall[0]==index && starBall[1]==ind)?'2X':'S'}</Text>
+                      <Text onPress={()=>{if(bonusBall[0]==index && bonusBall[1]==ind)setBonusBall([]);else if(starBall[0]==index && starBall[1]==ind){setStarBall([]);setBonusBall([index,ind]);} else setBonusBall([index,ind])}} style={[styles.StarBonusCircle,{borderColor:(bonusBall[0]==index && bonusBall[1]==ind)?'#1a1a1a':'#a1a1a1',paddingHorizontal:(bonusBall[0]==index && bonusBall[1]==ind)?2.4:12.5,color:(bonusBall[0]==index && bonusBall[1]==ind)?'#f5f5f5':'#a1a1a1',backgroundColor:(bonusBall[0]==index && bonusBall[1]==ind)?'#1a1a1a':'#ffffff'}]}>{(bonusBall[0]==index && bonusBall[1]==ind)?'1.5X':'B'}</Text>
+                    </View>
+                  </View>
+                );
+              });
+              return renderItems;
+            })}
+        </BottomSheetScrollView>
+        <Text onPress={()=>{if (starBall.length===2 && bonusBall.length===2)NextButtonTouched()}} style={(starBall.length===2 && bonusBall.length===2) ?[styles.NextButtonText,{backgroundColor:'#009e00'}]:styles.NextButtonText}>NEXT</Text>
+    </></BottomSheetModal>
+
     <BottomSheetModal
       ref={sheetRef1}
       snapPoints={['35%']}
@@ -306,180 +355,14 @@ export default function BallSelection({navigation}) {
   )}
 
 //========Styles==========================================================================================================================================================================================
-const LogoAndNameOneContainer = {flexDirection:'row',
-  alignItems:'center',
-  justifyContent:'center'}
-const TeamCodeOne = {fontFamily:'Poppins-Medium',
-  fontSize:15,
-  color:'#ffffff'}
+
 const common = {  flexDirection:'row',
   justifyContent:'space-between',
   alignItems:'center'}
-const styles = StyleSheet.create({
+const styles2 = StyleSheet.create({
   MainDetailsContainer:{
     backgroundColor:'#1a1a1a',
     justifyContent:'space-between',
-  },
-  LogoAndnameContainer:{
-    ...LogoAndNameOneContainer,
-    marginTop:17,
-  },
-  LogoAndNameOneContainer:{
-      ...LogoAndNameOneContainer,
-      marginRight:20,
-  },
-  LogoAndNameTwoContainer:{
-    ...LogoAndNameOneContainer,
-    marginLeft:20,
-  },
-  TeamCodeOne:{
-    ...TeamCodeOne,
-    marginLeft:3
-  },
-  TeamCodeTwo:{
-    ...TeamCodeOne,
-    marginRight:3,
-  },
-  versustext:{
-    fontFamily:'Poppins-Regular',
-    fontSize:14
-  },
-  TWholeContainer:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'space-between',
-    width:'100%',
-  },
-  BallLeftMainContainer:{
-    marginTop:17,
-    marginBottom:-8
-  },
-  BallsLeftBallsText:{
-    fontFamily:'Poppins-Medium',
-    fontSize:13
-  },
-  BallsLeftBallsMainText:{
-    fontFamily:'Poppins-SemiBold',
-    fontSize:14.5,
-    color:'#f6f7fb',
-    position:'relative',
-    bottom:1.5
-  },
-  OverNamePattiContainer:{
-    flexDirection:'row',
-    justifyContent:'space-between',
-    paddingVertical:4,
-    paddingHorizontal:12,
-    backgroundColor:'#ffffff',
-    alignItems:'center',
-    borderBottomWidth:0.7,
-    borderBottomColor:'#e8e8e8',
-    elevation:2
-  },
-  CreateSetText:{
-    color:'#545454',
-    fontFamily:'Poppins-SemiBold',
-    fontSize:12
-  },
-  PikersMainSuperContainer:{
-    flexDirection:'column',
-    alignItems:'center',
-    justifyContent:'center',
-    marginTop:20,
-    marginBottom:90,
-    marginHorizontal:10,
-  },
-  PickerContainer:{
-    ...common,
-    backgroundColor:'#fffffe',
-    borderColor:'#d4d4d4',
-    borderWidth:0.6,
-    borderRadius:11,
-    paddingHorizontal:12,
-    marginBottom:20,
-    width:'92%',
-    elevation:0.5
-  },
-  ModalMainContainer:{
-    maxHeight:0.90*height,
-    backgroundColor:'#ffffff',
-    borderRadius:12,
-    paddingTop:10,
-    borderColor:'#a1a1a1',
-    borderWidth:0.4,
-    opacity:0.99,
-  },
-  SelectScoreText:{
-    color:'#1a1a1a',
-    fontFamily:'Poppins-SemiBold',
-    textAlign:'center',
-    fontSize:15
-  },
-  BallNumberingText:{
-    color:'#9d9d9d',
-    fontFamily:'Poppins-Medium',
-    fontSize:12,
-    paddingRight:'5%'
-  },
-  BallNameText:{
-    color:'#545454',
-    fontFamily:'Poppins-Medium',
-    fontSize:14,
-  },
-  ScoreItemContainer:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'space-between',
-    borderBottomWidth:0.6,
-    borderBottomColor:'#e6e6e6',
-    borderBottomEndRadius:11,
-    borderBottomStartRadius:11,
-    padding:5
-  },
-  ScoreDesignContainer:{
-    ...LogoAndNameOneContainer,
-    paddingLeft:10,
-    width:"80%",
-    alignItems:'center',
-    justifyContent:'flex-start',
-  },
-  NextButtonText:{
-    position:'absolute',
-    bottom:25,
-    color:'white',
-    backgroundColor:'#999999',
-    borderRadius:25,
-    fontFamily:'Poppins-SemiBold',
-    fontSize:16,
-    paddingVertical:5,
-    paddingHorizontal:40,
-    alignSelf:'center',
-    elevation:1,
-  },
-  TabPattiItemContainer2:{
-    minWidth:37,
-    height: 28,
-    backgroundColor: 'white',
-    alignItems:'center',
-    justifyContent:'center',
-    marginHorizontal:1,
-    borderRadius:4
-  },
-  TabPattiText2:{
-    color:'#f6f7fb',
-    fontFamily:'Poppins-SemiBold',
-    fontSize:14,
-  },
-  BallNumberingText0:{
-    fontFamily:'Poppins-Medium',
-    fontSize:7,
-    position:'absolute',
-    bottom:16.8,
-    right:31
-  },
-  TeamLogoOne:{
-    width:33,
-    height:33
   },
   LSTeamName:{
     color:'#a4a4a4',

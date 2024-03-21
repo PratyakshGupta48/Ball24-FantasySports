@@ -154,7 +154,6 @@ export default function Transactions({navigation}) {
       transactions,
     };
   });
-  console.log(0.50*height)
 
   return (<>
     <HeaderBlank navigation={()=>{navigation.goBack();}} Heading={'Transactions'} color='#1a1a1a'/>

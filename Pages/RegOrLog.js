@@ -52,7 +52,7 @@ function RegOrLog({ navigation }) {
   return (<>
     <StatusBar animated={true} backgroundColor="#02091b" />
     <ImageBackground source={require('../accessories/DreamBallLogos/newbanner3.png')} resizeMode="cover" style={styles.BackgroundImage}>
-      <Image source={require('../accessories/DreamBallLogos/azxcv.png')} style={styles.OnboardingLogo} />
+      <Image source={require('../accessories/DreamBallLogos/ball24.png')} style={styles.OnboardingLogo} />
       {firstLaunch && <><Carousel data={data1} renderItem={({item})=>item.JSX} itemWidth={width} sliderWidth={width} onSnapToItem={(index) => setActiveState(index ) }/>
       <View style={styles.RegOrLogContainer}>
         <Pagination dotsLength={data1.length} activeDotIndex={activeSlide} containerStyle={{paddingVertical:0,paddingBottom:15}} dotStyle={{width: 16,height: 4,borderRadius: 5,marginHorizontal: -5,backgroundColor: 'rgba(255, 255, 255, 0.92)'}} inactiveDotStyle={{width:10,height:10}}/>

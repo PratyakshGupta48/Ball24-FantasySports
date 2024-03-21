@@ -9,7 +9,7 @@ import BottomSheet , {BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 import SkeletonContent, { SkeletonOneLiner} from '../../../SkeletonPlaceholder';
 import BallViewCompleted from './BallViewCompleted';
 import HeaderBlank from '../../../Headers/HeaderBlank';
-import FastImage from 'react-native-fast-image';
+import FetchScore from '../../../FetchScore';
 
 const size = Math.floor((width-34)/45);
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -36,12 +36,12 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
   const [refresh,setRefresh] = useState(false)
   const [selectedItemIndex, setSelectedItemIndex] = useState(-1);
   const [ballViewData,setBallViewData] = useState(["",[]]);
-  const [scoreData,setScoreData] = useState(null);
+  // const [scoreData,setScoreData] = useState(null);
   const sheetRef1 = useRef(null);
 
   const openBottomSheet1 = useCallback((index) => {if(sheetRef1.current) sheetRef1.current.snapToIndex(index);},[]);
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0}/>)
-  useEffect(() => {if (scoreData||selectedItemIndex) LayoutAnimation.configureNext(customLayoutAnimation);}, [scoreData,selectedItemIndex]);
+  useEffect(() => {if (selectedItemIndex) LayoutAnimation.configureNext(customLayoutAnimation);}, [selectedItemIndex]);
   useEffect(()=>{ 
     const fetchData = async () => {
       setLoadingSpinner(true);
@@ -75,20 +75,20 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
     };
     fetchData()
   },[refresh]);
-  useEffect(()=>{
-    if (MatchLink!=undefined) {
-      async function fetchScore() {
-        try {
-          const response = await fetch('https://get-cricket-score.vercel.app/score?url=' + MatchLink);
-          const data = await response.json();
-          setScoreData(data);
-        } catch (e) {
-          // fetchScore();
-        }
-      }
-      fetchScore();
-    }
-  },[refresh])
+  // useEffect(()=>{
+  //   if (MatchLink!=undefined) {
+  //     async function fetchScore() {
+  //       try {
+  //         const response = await fetch('https://get-cricket-score.vercel.app/score?url=' + MatchLink);
+  //         const data = await response.json();
+  //         setScoreData(data);
+  //       } catch (e) {
+  //         // fetchScore();
+  //       }
+  //     }
+  //     fetchScore();
+  //   }
+  // },[refresh])
 
   const RenderExtendedList = useCallback(({MatchKey}) => {
     const [ContestSetsData,setContestSetsData] = useState([]);
@@ -217,7 +217,9 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
 
   return (<>
   <HeaderBlank Heading={TeamCode1 +' vs '+TeamCode2} navigation={()=>{navigation.goBack()}} color='#1a1a1a'/>
-  {scoreData!=null && <View style={{backgroundColor:'#1a1a1a',flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingBottom:5}}>
+  {MatchLink && <FetchScore I1={I1} I2={I2} status={'Completed'} url={MatchLink}/>}
+
+  {/* {scoreData!=null && <View style={{backgroundColor:'#1a1a1a',flexDirection:'column',justifyContent:'center',paddingHorizontal:13,paddingBottom:5}}>
     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
       <View style={{alignItems:'flex-start'}}>
         <Text style={styles.LSTeamName}>{scoreData.Team1}</Text>
@@ -243,7 +245,7 @@ export default function MyContestsMatchDisplayOnClickCompletedPage({navigation})
       <Text style={styles.LSStatusText}>{'Completed'}</Text>
     </View>
     <Text style={styles.LSConclusionText}>{scoreData.Status}</Text>
-  </View>}
+  </View>} */}
     
   {loadingSpinner?<View style={{flex:1,backgroundColor:'#ffffff',paddingTop:12}}><SkeletonContent/></View>:(<>
     <FlatList

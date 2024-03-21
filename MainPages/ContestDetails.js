@@ -8,7 +8,7 @@ import RenderWinning from './RenderWinning';
 import ContestDetailLeaderboard from './ContestDetailLeaderboard';
 import LiveLeaderboard from './MainTabPages/MyContests/LiveLeaderboard';
 import { width } from '../Dimensions';
-import FetchScore from '../FetchScore';
+// import FetchScore from '../FetchScore';
 
 const Tab = createMaterialTopTabNavigator();
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -43,20 +43,22 @@ function ContestDetails({navigation}) {
         setContestStatus(m)
         if(m==='L')setRefunded(documentSnapshot.data().Refunded)
       });
-      const matchListener = firestore().collection('AllMatches').doc(MatchId).onSnapshot((documentSnapshot) => {
-        const status = documentSnapshot.data().Status
-        setStatus(status);
-      });
+      // const matchListener = firestore().collection('AllMatches').doc(MatchId).onSnapshot((documentSnapshot) => {
+      //   const status = documentSnapshot.data().Status
+      //   setStatus(status);
+      // });
       const userListener = firestore().collection('users').doc(uid).onSnapshot((documentSnapshot) => {
         setNewUser(documentSnapshot.data().Contest);
       });
-      return () => { contestListener(); matchListener(); userListener();};
+      return () => { contestListener(); 
+        // matchListener(); 
+        userListener();};
     }, [])
   )
 
   return ( <>
 
-    {(status==='Live' || status==='Completed') && MatchLink && <FetchScore page={'Details'}  I1={I1} I2={I2} status={status} url={MatchLink}/>}
+    {/* {(status==='Live' || status==='Completed') && MatchLink && <FetchScore page={'Details'}  I1={I1} I2={I2} status={status} url={MatchLink}/>} */}
     <View style={styles.Card}>
       <View style={styles.PrizeEntryTextContainer}>
         <Text style={styles.PrizeText}>Prize Pool</Text>

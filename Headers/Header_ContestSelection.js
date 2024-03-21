@@ -3,7 +3,7 @@ import React,{useEffect,useState,useCallback } from 'react'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore';
 
-export default function Header_ContestSelection({navigation,navigation2,TeamCode1,TeamCode2,Matchid,MatchKey,Overs,special,WalletFunction}) {
+export default function Header_ContestSelection({walletIconHide,navigation,navigation2,TeamCode1,TeamCode2,Matchid,MatchKey,Overs,special,WalletFunction}) {
 
   const [MatchTime,setMatchTime] = useState(null);
   const [status,setStatus] = useState();
@@ -46,7 +46,7 @@ export default function Header_ContestSelection({navigation,navigation2,TeamCode
       <View style={{flexDirection:'row',alignItems:"center"}}>
         <Icon name='help-circle-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={navigation2}/>
         {/* <Icon name='bell-plus-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={()=>{WalletFunction()}}/> */}
-        <Icon name='wallet-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={()=>{WalletFunction()}}/>
+        {!walletIconHide && <Icon name='wallet-outline' color={'#f6f7fb'} size={22} style={{paddingBottom:3,paddingRight:15}} onPress={()=>{WalletFunction()}}/>}
       </View>
     </View>
   </>)

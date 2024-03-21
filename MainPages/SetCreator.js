@@ -1,7 +1,6 @@
 import React, {useEffect, useState,useCallback,useRef} from 'react';
-import {View,Text,TouchableWithoutFeedback,ScrollView,StyleSheet,StatusBar,ActivityIndicator,LayoutAnimation,UIManager,Platform} from 'react-native';
+import {View,Text,TouchableWithoutFeedback,ScrollView,StatusBar,ActivityIndicator,LayoutAnimation,UIManager,Platform} from 'react-native';
 import {useRoute} from '@react-navigation/native';
-import {height, width} from '../Dimensions';
 import Header_ContestSelection from '../Headers/Header_ContestSelection';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firestore from '@react-native-firebase/firestore'; 
@@ -9,8 +8,8 @@ import FastImage from 'react-native-fast-image';
 import Modal from "react-native-modal";
 import Toast from 'react-native-toast-message';
 import functions from '@react-native-firebase/functions';
-import BottomSheet , {BottomSheetBackdrop} from '@gorhom/bottom-sheet';
-import WalletBottomSheet from './MainTabPages/WalletBottomSheet';
+import {BottomSheetModal,BottomSheetBackdrop, BottomSheetScrollView} from '@gorhom/bottom-sheet';
+import styles from '../Styles/BallSelection_SetCreator_Styles';
 
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
 const customLayoutAnimation = {
@@ -26,16 +25,18 @@ const customLayoutAnimation = {
 
 export default function SetCreator({navigation}) {
 
-  const sheetRef1 = useRef(null);
-  function openBottomSheet() {if (sheetRef1.current)sheetRef1.current.snapToIndex(0)}
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />);
+  const sheetRef2 = useRef(null);
+  const handlePresentModalPress2 = useCallback(() => {sheetRef2.current?.present();}, []);
+  const handleClosePress2 = () => sheetRef2.current.close();
   const {MatchId,uid,TeamCode1,TeamCode2,I1,I2} = useRoute().params;
   const [isModalVisible,setIsModalVisible] = useState(false);
   const [BallToBeUpdated,setballToBeUpdated] = useState(null);
   const [wideShown,showWide] = useState(false);
   const [wideNoBallShown,setWideNoBallShown] = useState(true);
   const [loadingSpinner,setLoadingSpinner] = useState(false);
-
+  const [starBall,setStarBall] = useState([]);
+  const [bonusBall,setBonusBall] = useState([]);
   const colors = {null:'#ffffff',"0":'#006269',"1":'#006269',"2":'#006269',"3":'#006269',"4":'#1e8e3e',"5":'#006269',"6":'#1e8e3e',"1WD":'#185ccc',"1NB":'#185ccc',"2NB":'#185ccc',"3NB":'#185ccc',"4NB":'#185ccc',"5NB":'#185ccc',"7NB":'#185ccc',"W":'#d93025'}
   const skip = ["1WD","1NB","2NB","3NB","4NB","5NB","7NB"];
   const FreeHitCheck = ["1NB","2NB","3NB","4NB","5NB","7NB"];
@@ -50,13 +51,18 @@ export default function SetCreator({navigation}) {
   const showToast = (type,text1,text2) => Toast.show({type: type,text1: text1,visibilityTime:2500,position:'top',topOffset:0,text2: text2});
 
   const NextButtonTouched = async () => {
+    handleClosePress2()
     setLoadingSpinner(true)
     const transformedData = [];
     await firestore().collection('AllMatches').doc(MatchId).collection('ParticipantsWithTheirSets').doc(uid).get().then((documentSnapshot) => {
       const data = documentSnapshot.data();
       if (data) for (let i = 1; i <= documentSnapshot.data().Count; i++) transformedData.push(data['S' + i]);
     });
-    const outputArray = scores.map(innerArray => {
+    let copy = JSON.parse(JSON.stringify(scores));
+    // # represents 2X  ,  * represents 1.5X
+    (copy[starBall[0]][starBall[1]])[0] = (copy[starBall[0]][starBall[1]])[0]+'#';
+    (copy[bonusBall[0]][bonusBall[1]])[0] = (copy[bonusBall[0]][bonusBall[1]])[0]+'*';
+    const outputArray = copy.map(innerArray => {
       const newObj = {};
       innerArray.forEach((item, index) => {
         newObj[index] = item[0];
@@ -124,7 +130,7 @@ export default function SetCreator({navigation}) {
   
   return(<>
     <StatusBar animated={true} backgroundColor="#000000"/>
-    <Header_ContestSelection navigation={()=>{navigation.pop()}} navigation2={()=>{navigation.navigate('WebViewRules')}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId} WalletFunction={()=>{openBottomSheet()}}/>
+    <Header_ContestSelection navigation={()=>{navigation.pop()}} walletIconHide={true} navigation2={()=>{navigation.navigate('WebViewRules')}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId}/>
 
     <View style={styles.MainDetailsContainer}>
       <View style={styles.TWholeContainer}>
@@ -233,7 +239,49 @@ export default function SetCreator({navigation}) {
       </View>
     </Modal>
       
-    <Text onPress={()=>{if (allBallsFilled==0)NextButtonTouched()}} style={allBallsFilled==0 ?[styles.NextButtonText,{backgroundColor:'#009e00'}]:styles.NextButtonText}>Next</Text>
+    <Text onPress={()=>{if (allBallsFilled==0){handlePresentModalPress2();setStarBall([]);setBonusBall([])}}} style={allBallsFilled==0 ?[styles.NextButtonText,{backgroundColor:'#009e00'}]:styles.NextButtonText}>Next</Text>
+
+    <BottomSheetModal
+      ref={sheetRef2}
+      snapPoints={['98%']}
+      enablePanDownToClose={true}
+      enableOverDrag={true}
+      handleStyle={{position:'absolute',alignSelf:'center'}}
+      handleIndicatorStyle={{backgroundColor:'#a1a1a1'}}
+      backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}
+      backdropComponent={renderBackdrop}><>
+        <View style={{backgroundColor:'#f5f5f5',borderTopLeftRadius:13,borderTopRightRadius:13,paddingTop:20,paddingBottom:12}}>
+          <Text style={styles.ChooseText}>Choose your Star and Bonus Score</Text>
+          <Text style={[styles.ChooseText,{fontSize:12,fontFamily:'Poppins-Medium'}]}>Star Score gets 2X, Bonus Score gets 1.5X points</Text>
+        </View>
+        <View style={styles.ChooseHeadingsContainer}>
+          <Text style={styles.ChooseHeadings}> SCORE          POINTS</Text>
+          <Text style={styles.ChooseHeadings}>STAR     BONUS</Text>
+        </View>
+        <BottomSheetScrollView style={{ backgroundColor: '#ffffff',paddingHorizontal:12,paddingTop:10 }}>
+            {scores.map((n, index) => {
+              const renderItems = n.map((item, ind) => {
+                const [score, ballName] = item;
+                const isSkip = !skip.includes(score);
+                return (
+                  <View key={ind} style={[styles.PickerContainer2,(ind>0 && isFreeHit(index,ind))?{paddingVertical:5}:{paddingVertical:10}]}>
+                  {ind>0 && isFreeHit(index, ind) && <FastImage source={require('../accessories/DreamBallLogos/FH.png')} style={{height:12,aspectRatio:500/100,borderTopLeftRadius:5,position:'absolute',top:-5.5,left:-0.5,opacity:1}}/>}
+                    <View style={common}>
+                      <Text style={[styles.BallNumberingText,{paddingRight:0}]}>{isSkip?index + 1 :''}</Text>
+                      <Text style={styles.BallNameText}>{ballName}</Text>
+                    </View>
+                    <View style={common}>
+                      <Text onPress={()=>{if(starBall[0]==index && starBall[1]==ind)setStarBall([]);else if(bonusBall[0]==index && bonusBall[1]==ind){setBonusBall([]);setStarBall([index,ind]);} else setStarBall([index,ind])}} style={[ styles.StarBonusCircle,{borderColor:(starBall[0]==index && starBall[1]==ind)?'#1a1a1a':'#a1a1a1',paddingHorizontal:(starBall[0]==index && starBall[1]==ind)?9:12.5,marginRight:25,color:(starBall[0]==index && starBall[1]==ind)?'#f5f5f5':'#a1a1a1',backgroundColor:(starBall[0]==index && starBall[1]==ind)?'#1a1a1a':'#ffffff'}]}>{(starBall[0]==index && starBall[1]==ind)?'2X':'S'}</Text>
+                      <Text onPress={()=>{if(bonusBall[0]==index && bonusBall[1]==ind)setBonusBall([]);else if(starBall[0]==index && starBall[1]==ind){setStarBall([]);setBonusBall([index,ind]);} else setBonusBall([index,ind])}} style={[styles.StarBonusCircle,{borderColor:(bonusBall[0]==index && bonusBall[1]==ind)?'#1a1a1a':'#a1a1a1',paddingHorizontal:(bonusBall[0]==index && bonusBall[1]==ind)?2.4:12.5,color:(bonusBall[0]==index && bonusBall[1]==ind)?'#f5f5f5':'#a1a1a1',backgroundColor:(bonusBall[0]==index && bonusBall[1]==ind)?'#1a1a1a':'#ffffff'}]}>{(bonusBall[0]==index && bonusBall[1]==ind)?'1.5X':'B'}</Text>
+                    </View>
+                  </View>
+                );
+              });
+              return renderItems;
+            })}
+        </BottomSheetScrollView>
+        <Text onPress={()=>{if (starBall.length===2 && bonusBall.length===2)NextButtonTouched()}} style={(starBall.length===2 && bonusBall.length===2) ?[styles.NextButtonText,{backgroundColor:'#009e00'}]:styles.NextButtonText}>NEXT</Text>
+    </></BottomSheetModal>
 
     {loadingSpinner && <ActivityIndicator 
       hidesWhenStopped={true}
@@ -242,201 +290,11 @@ export default function SetCreator({navigation}) {
       animating={true}
       style={styles.ActivityIndicator}
     />}
-    <BottomSheet
-      ref={sheetRef1}
-      snapPoints={[36400/height+'%']}
-      index={-1}
-      enablePanDownToClose={true}
-      enableOverDrag={true}
-      backdropComponent={renderBackdrop}
-      handleStyle={{position:'absolute',alignSelf:'center'}}
-      handleIndicatorStyle={{backgroundColor:'#dbdbdb'}}
-      backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
-        <WalletBottomSheet navigation={()=>navigation.navigate('AddCash')}/>
-    </BottomSheet>
     </>
   )}
 
-//========Styles==========================================================================================================================================================================================
-const LogoAndNameOneContainer = {flexDirection:'row',
-  alignItems:'center',
-  justifyContent:'center'}
-const TeamCodeOne = {fontFamily:'Poppins-Medium',
-  fontSize:15,
-  color:'#ffffff'}
-const common = {  flexDirection:'row',
+const common = {  
+  flexDirection:'row',
   justifyContent:'space-between',
-  alignItems:'center'}
-const styles = StyleSheet.create({
-  MainDetailsContainer:{
-    backgroundColor:'#1a1a1a',
-    height:135,
-    alignItems:'center',
-    justifyContent:'space-between',
-  },
-  LogoAndnameContainer:{
-    ...LogoAndNameOneContainer,
-    marginTop:17,
-  },
-  LogoAndNameOneContainer:{
-      ...LogoAndNameOneContainer,
-      marginRight:20,
-  },
-  LogoAndNameTwoContainer:{
-    ...LogoAndNameOneContainer,
-    marginLeft:20,
-  },
-  TeamCodeOne:{
-    ...TeamCodeOne,
-    marginLeft:3
-  },
-  TeamCodeTwo:{
-    ...TeamCodeOne,
-    marginRight:3,
-  },
-  versustext:{
-    fontFamily:'Poppins-Regular',
-    fontSize:14
-  },
-  TeamLogoOne:{
-    width:43,
-    height:43
-  },
-  TWholeContainer:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'space-between',
-    width:'100%',
-  },
-  BallLeftMainContainer:{
-    marginTop:17,
-    marginBottom:-8
-  },
-  BallsLeftBallsText:{
-    fontFamily:'Poppins-Medium',
-    fontSize:13
-  },
-  BallsLeftBallsMainText:{
-    fontFamily:'Poppins-SemiBold',
-    fontSize:14.5,
-    color:'#f6f7fb',
-    position:'relative',
-    bottom:1.5
-  },
-  OverNamePattiContainer:{
-    flexDirection:'row',
-    justifyContent:'space-between',
-    paddingVertical:4,
-    paddingHorizontal:12,
-    backgroundColor:'#ffffff',
-    alignItems:'center',
-    borderBottomWidth:0.7,
-    borderBottomColor:'#e8e8e8'
-  },
-  CreateSetText:{
-    color:'#1a1a1a',
-    fontFamily:'Poppins-SemiBold',
-    fontSize:12
-  },
-  PikersMainSuperContainer:{
-    flexDirection:'column',
-    alignItems:'center',
-    justifyContent:'center',
-    marginTop:20,
-    marginBottom:90,
-    marginHorizontal:10,
-  },
-  PickerContainer:{
-    ...common,
-    borderColor:'#d4d4d4',
-    borderWidth:0.6,
-    borderRadius:11,
-    paddingHorizontal:12,
-    marginBottom:20,
-    width:'92%'
-  },
-  ModalMainContainer:{
-    maxHeight:0.90*height,
-    backgroundColor:'#ffffff',
-    borderRadius:12,
-    paddingTop:10,
-    borderColor:'#a1a1a1',
-    borderWidth:0.4,
-    opacity:0.99,
-  },
-  SelectScoreText:{
-    color:'#1a1a1a',
-    fontFamily:'Poppins-SemiBold',
-    textAlign:'center',
-    fontSize:15
-  },
-  BallNumberingText:{
-    color:'#9d9d9d',
-    fontFamily:'Poppins-Medium',
-    fontSize:12,
-    paddingRight:'5%'
-  },
-  BallNameText:{
-    color:'#525252',
-    fontFamily:'Poppins-Medium',
-    fontSize:14,
-  },
-  ScoreItemContainer:{
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'space-between',
-    borderBottomWidth:0.6,
-    borderBottomColor:'#e6e6e6',
-    borderBottomEndRadius:11,
-    borderBottomStartRadius:11,
-    padding:5
-  },
-  ScoreDesignContainer:{
-    ...LogoAndNameOneContainer,
-    paddingLeft:10,
-    width:"80%",
-    alignItems:'center',
-    justifyContent:'flex-start',
-  },
-  NextButtonText:{
-    position:'absolute',
-    bottom:25,
-    color:'white',
-    backgroundColor:'#999999',
-    borderRadius:25,
-    fontFamily:'Poppins-SemiBold',
-    fontSize:16,
-    paddingVertical:5,
-    paddingHorizontal:40,
-    alignSelf:'center',
-    elevation:1,
-  },
-  TabPattiItemContainer2:{
-    minWidth:37,
-    height: 28,
-    backgroundColor: 'white',
-    alignItems:'center',
-    justifyContent:'center',
-    marginHorizontal:1,
-    borderRadius:4
-  },
-  TabPattiText2:{
-    color:'#f6f7fb',
-    fontFamily:'Poppins-SemiBold',
-    fontSize:14,
-  },
-  BallNumberingText0:{
-    fontFamily:'Poppins-Medium',
-    fontSize:7,
-    position:'absolute',
-    bottom:16.8,
-    right:31
-  },
-  ActivityIndicator:{
-    position:'absolute',
-    height:height,
-    width:width,
-    bottom:12,
-    backgroundColor:'#f6f7fb'
-   },
-});
+  alignItems:'center'
+}

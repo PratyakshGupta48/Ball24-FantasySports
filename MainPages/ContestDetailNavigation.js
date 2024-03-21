@@ -38,7 +38,7 @@ export default function ContestDetailNavigation({navigation}) {
     <Header_ContestSelection navigation={()=>{navigationV.pop()}} navigation2={()=>{navigation.navigate('WebViewRules')}} TeamCode1={TeamCode1} TeamCode2={TeamCode2} Matchid={MatchId} MatchKey={MatchKey} Overs={Overs}  WalletFunction={()=>{openBottomSheet()}}/>
     <Stack.Navigator initialRouteName={initialScreen}>
       <Stack.Screen name='ContestDetails' component={ContestDetails} listeners={({ navigation }) => ({focus: () => navigationV=navigation })} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen'}} initialParams={{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,I1:I1,I2:I2,MatchLink:MatchLink,PrizePool:PrizePool,Overs:Overs,Entry:Entry,MatchKey:MatchKey,MaximumSpots:MaximumSpots,FirstPosition:FirstPosition,WinnersPercentage:WinnersPercentage,uid:uid,Winnings:Winnings,Free:Free,Inning:Inning}} />
-      {status!=='Completed' && <Stack.Screen listeners={({ navigation }) => ({focus: () => navigationV=navigation })} name='AskForSet' component={AskForSetPage} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen'}} initialParams={{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,I1:I1,I2:I2,Team1:Team1,Team2:Team2,MatchLink:MatchLink,ContestType:ContestType,Entry:Entry,MatchKey:MatchKey,MaximumSpots:MaximumSpots,uid:uid,Free:Free,Inning:Inning}} />}
+      {status!=='Completed' && <Stack.Screen listeners={({ navigation }) => ({focus: () => navigationV=navigation })} name='AskForSet' component={AskForSetPage} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen'}} initialParams={{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,ContestType:ContestType,Entry:Entry,MatchKey:MatchKey,uid:uid,Free:Free}} />}
       {status!=='Completed' && <Stack.Screen name='BallSelection' component={BallSelection}  listeners={({ navigation }) => ({focus: () => navigationV=navigation })} options={{headerShown:false,animation:'slide_from_right',headerMode:'screen'}} initialParams={{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,I1:I1,I2:I2,Team1:Team1,Team2:Team2,MatchLink:MatchLink,ContestType:ContestType,Entry:Entry,MatchKey:MatchKey,uid:uid,Free:Free,Inning:Inning,Overs:Overs}} />}
     </Stack.Navigator>
     <BottomSheet
@@ -51,7 +51,7 @@ export default function ContestDetailNavigation({navigation}) {
       handleStyle={{position:'absolute',alignSelf:'center'}}
       handleIndicatorStyle={{backgroundColor:'#dbdbdb'}}
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
-        <WalletBottomSheet navigation={()=>navigationV.navigate('AddCash')}/>
+        <WalletBottomSheet navigation={()=>navigation.navigate('AddCash')}/>
     </BottomSheet>
     </>
   )

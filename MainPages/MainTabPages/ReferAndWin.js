@@ -168,7 +168,7 @@ export default function ReferAndWin({navigation}) {
           <View style={styles.ImagesContainerOne}>
             <TouchableOpacity onPress={()=>{redeemPrizes(10)}}>
               <View style={styles.ImageiContiner}>
-                <Image source={require('../../accessories/ReferImages/ball24.png')} style={{width:66,height:44}}></Image>
+                <Image source={require('../../accessories/ReferImages/cpy2.png')} style={{width:50,height:44}}></Image>
                 <Text style={styles.PrizeTitle}>₹50 Ball24 Cash</Text>
                 <Text style={styles.ReferNumber}>10 <Image source={require('../../accessories/ReferImages/bCoin2.png')} style={{width:14,height:14,marginLeft:3,marginBottom:4}}></Image></Text>
               </View>

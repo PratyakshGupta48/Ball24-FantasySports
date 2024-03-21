@@ -7,13 +7,12 @@ import firestore from '@react-native-firebase/firestore';
 import {BottomSheetModal,BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 import { height,width } from '../../../Dimensions';
 import FastImage from 'react-native-fast-image';
-import Modal from "react-native-modal"; 
 import Tooltip from 'rn-tooltip';
 import BallView from './BallViewPage';
 import SkeletonContent, { SkeletonOneLiner} from '../../../SkeletonPlaceholder';
 import SwitchSets from '../../../Helpers/SwitchSets';
 
-const size = Math.floor((width-34)/45);
+const snapPoint = 50000/height+'%';
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
 const customLayoutAnimation = {
   duration: 250,
@@ -36,7 +35,6 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
   const [ContestData,setContestData] = useState([])
   const [refresh,setRefresh] = useState(false)
   const [selectedItemIndex, setSelectedItemIndex] = useState(-1);
-  const [isModalVisible,setIsModalVisible] = useState(false);
   const [Id,setId] = useState(null);
   const [MatchKey,setMatchKey] = useState(null);
   const [oldSet,setOldSet] = useState(null);
@@ -46,16 +44,19 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
 
   const renderBackdrop = useCallback((props)=><BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0}/>)
   const openBottomSheet1 = useCallback(() => {sheetRef1.current?.present();}, []);
-  const handleClosePress = () => sheetRef1.current.close()
-  const handlePresentModalPress = useCallback(() => {sheetRef2.current?.present();}, []);
+  const handleClosePress = () => sheetRef1.current?.close();
+  const openBottomSheet2 = useCallback(() => {sheetRef2.current?.present();}, []);
+  const handleClosePress2 = () => sheetRef2.current?.close();
 
-  useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation)}, [selectedItemIndex,isModalVisible,loadingSpinner]);
+
+  useEffect(() => {LayoutAnimation.configureNext(customLayoutAnimation)}, [selectedItemIndex,loadingSpinner]);
   // useFocusEffect(
     useEffect(() => {
       setSelectedItemIndex(-1)
       const fetchData = async () => {
         setLoadingSpinner(true);
-        setIsModalVisible(false);
+        handleClosePress();
+        handleClosePress2()
         const contestsSnapshot = await firestore().collection('users').doc(uid).collection('MyContests').doc(MatchId).collection('Contests').get();
         const arr = [];
         await Promise.all(
@@ -77,9 +78,8 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
             const contestData = change.doc.data();
             if (contestData.ContestStatus === 'Live' && ContestData.find(item=> item.DocumentId === contestData.DocumentId)) {
               setRefresh(!refresh)
-              setIsModalVisible(false)
-              handleClosePress()
-              sheetRef1.current?.close();
+              handleClosePress();
+              handleClosePress2()
             }
           }
         });
@@ -139,8 +139,7 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
       };
       const navigateToBallEdit = () => navigation.navigate('BallEdit', { MatchId, TeamCode1, TeamCode2, uid, I1, I2, SetName: item.SetName});
       const showModal = () => {
-        setIsModalVisible(true);
-        handlePresentModalPress()
+        openBottomSheet2()
         setId(item.id);
         setMatchKey(MatchKey);
         setOldSet(item.SetName);
@@ -258,19 +257,26 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
         <Text style={{paddingHorizontal:40,color:'#ffffff',backgroundColor:'#009e00',paddingVertical:7,fontFamily:'Poppins-Medium',borderRadius:8,fontSize:17}} onPress={()=>{navigation.jumpTo('Contests')}}>Explore Contests</Text>
       </View>)}
     />
-    <Modal isVisible={isModalVisible} animationIn={'slideInUp'} animationInTiming={350} animationOut={'slideOutDown'} animationOutTiming={350} backdropOpacity={0.5} onBackdropPress={()=>{setIsModalVisible(false)}} hideModalContentWhileAnimating={true} >
-      <SwitchSets MatchId={MatchId} uid={uid} MatchKey={MatchKey} oldSet={oldSet} Id={Id} disableRefresh={()=>{setTimeout(()=>{setIsModalVisible(false);setRefresh(!refresh);}, 1500);}}/>
-    </Modal>
+    <BottomSheetModal
+      ref={sheetRef2}
+      snapPoints={['70%']}
+      enablePanDownToClose={false}
+      enableOverDrag={true}
+      backdropComponent={renderBackdrop}
+      handleStyle={{display:'none'}}
+      backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
+        <SwitchSets MatchId={MatchId} uid={uid} MatchKey={MatchKey} oldSet={oldSet} Id={Id} disableRefresh={()=>{setTimeout(()=>{setRefresh(!refresh);}, 1500);}}/>
+    </BottomSheetModal>
     <BottomSheetModal
       ref={sheetRef1}
-      snapPoints={[(ballViewData[1].length>size?( (ballViewData[7]=='Upcoming')?55400/height+'%':58000/height+'%'):47500/height+'%')]}
+      snapPoints={[snapPoint]}
       enablePanDownToClose={true}
       enableOverDrag={true}
       backdropComponent={renderBackdrop}
       handleStyle={{position:'absolute',alignSelf:'center'}}
       handleIndicatorStyle={{backgroundColor:'#ffffff'}}
       backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
-        <BallView status={ballViewData[7]} Points={ballViewData[3]} Rank={ballViewData[4]} PointsArray={ballViewData[5]} name={Name} userSetName={ballViewData[0]} userSet={ballViewData[1]} lockStatus={ballViewData[6]} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={ballViewData[2]} navigation={()=>{navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,uid:uid,I1:I1,I2:I2,SetName:ballViewData[0]})}}/>
+        <BallView status={ballViewData[7]} Points={ballViewData[3]} Rank={ballViewData[4]} PointsArray={ballViewData[5]} name={Name} userSetName={ballViewData[0]} userSet={ballViewData[1]} lockStatus={ballViewData[6]} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={ballViewData[2]} navigation={()=>{handleClosePress();navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,uid:uid,I1:I1,I2:I2,SetName:ballViewData[0]})}}/>
     </BottomSheetModal>
   </>)}
   </>)      

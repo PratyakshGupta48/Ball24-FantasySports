@@ -14,12 +14,12 @@ export default function More({navigation}) {
         <Text style={styles.AboutUsText}>How To play</Text>
       </View>
     </TouchableWithoutFeedback>
-    <TouchableWithoutFeedback onPress={()=>{navigation.navigate('Fantasy Point System')}}>
+    {/* <TouchableWithoutFeedback onPress={()=>{navigation.navigate('Fantasy Point System')}}>
       <View style={styles.AboutUscardContainer} elevation={3}>
         <Icon name='scoreboard-outline' size={25} color='#121212' style={styles.iicon}/>
         <Text style={styles.AboutUsText}>Rules & Scoring</Text>
       </View>
-    </TouchableWithoutFeedback>
+    </TouchableWithoutFeedback> */}
     <TouchableWithoutFeedback onPress={() => Linking.openURL('https://ball24.in/pages/about-us')}>
       <View style={styles.AboutUscardContainer} elevation={3}>
         <Icon name='information-outline' size={25} color='#121212' style={styles.iicon}/>

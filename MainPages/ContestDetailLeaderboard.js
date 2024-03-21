@@ -4,7 +4,8 @@ import { useRoute } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore'; 
 import { width, height } from '../Dimensions';
 import FastImage from 'react-native-fast-image';
-import BallViewLive from './MainTabPages/MyContests/BallViewLive';
+import BallView from './MainTabPages/MyContests/BallViewPage';
+
 import Toast from 'react-native-toast-message';
 import {BottomSheetModal,BottomSheetBackdrop} from '@gorhom/bottom-sheet';
 
@@ -90,7 +91,7 @@ export default function ContestDetailLeaderboard() {
       if(item.My){
         const totalRuns = (item.Set).reduce((acc, val) => acc + (isNaN(parseInt(val)) ? 0 : parseInt(val[0])), 0)
         setUserSetName(item.SetName)
-        setUserSet(item.Set)
+        setUserSet(item.Set.flatMap(Object.values))
         setTotalRuns(totalRuns)
         setName(item.Name)
         handlePresentModalPress()
@@ -138,7 +139,7 @@ export default function ContestDetailLeaderboard() {
        handleStyle={{position:'absolute',alignSelf:'center'}}
        handleIndicatorStyle={{backgroundColor:'#ffffff'}}
        backgroundStyle={{borderTopLeftRadius:13,borderTopRightRadius:13}}>
-      <BallViewLive status={'upcoming'} Points={null} PointsArray={null} name={Name} userSetName={userSetName} userset={userSet} lockStatus={true} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={totalRuns} navigation={()=>{null}}/>
+      <BallView status={'upcoming'} Points={null} PointsArray={null} name={Name} userSetName={userSetName} userSet={userSet} lockStatus={true} TeamCode1={TeamCode1} TeamCode2={TeamCode2} totalRuns={totalRuns} navigation={()=>{null}}/>
     </BottomSheetModal>
     </>
   )

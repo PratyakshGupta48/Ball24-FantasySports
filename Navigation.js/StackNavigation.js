@@ -10,7 +10,7 @@ import Icon2 from 'react-native-vector-icons/MaterialCommunityIcons';
 import RegOrLog from '../Pages/RegOrLog';
 import Authentication from '../Pages/Authentication';
 import DrawerContent from '../MainPages/MainDrawerPages/DrawerContent';
-import FantasyPointSystem from '../MainPages/MainDrawerPages/FantasyPointSystem';
+// import FantasyPointSystem from '../MainPages/MainDrawerPages/FantasyPointSystem';
 import HowToPlay from '../MainPages/MainDrawerPages/HowToPlay';
 import Feedback from '../MainPages/MainDrawerPages/Feedback';
 import FollowUs from '../MainPages/MainDrawerPages/FollowUs';
@@ -22,7 +22,7 @@ import SetCreator from '../MainPages/SetCreator';
 import AddCash from '../MainPages/MainTabPages/AddCash';
 import Transactions from '../MainPages/MainTabPages/Transactions';
 import BallEditPage from '../MainPages/MainTabPages/MyContests/BallEditPage';
-import BallViewCompleted from '../MainPages/MainTabPages/MyContests/BallViewCompleted';
+// import BallViewCompleted from '../MainPages/MainTabPages/MyContests/BallViewCompleted';
 import AddEmail from '../MainPages/MainTabPages/AddEmail';
 import ReferAndWinExtension from '../MainPages/MainTabPages/ReferAndWinExtension';
 import Withdraw from '../MainPages/MainTabPages/Withdraw';
@@ -94,7 +94,7 @@ function MainDrawernavigation() {
       <Drawer.Screen name='MyBalance' component={Wallet} options={{drawerIcon:()=>DrawerDesign('wallet-outline','My Balance')}}/>
       <Drawer.Screen name='ReferAndWin' component={ReferAndWin} options={{drawerIcon:()=>DrawerDesign('people-outline','Refer And Redeem')}}/>
       <Drawer.Screen name='HowToPlay' component={HowToPlay} options={{drawerIcon:()=>DrawerDesign('game-controller-outline','How To Play')}}/>
-      <Drawer.Screen name='Fantasy Point System' component={FantasyPointSystem} options={{drawerIcon:()=>DrawerDesign('cash-outline','Ball24 Fantasy Point System')}}/>
+      {/* <Drawer.Screen name='Fantasy Point System' component={FantasyPointSystem} options={{drawerIcon:()=>DrawerDesign('cash-outline','Ball24 Fantasy Point System')}}/> */}
       <Drawer.Screen name='Follow us on social media' component={FollowUs} options={{drawerIcon:()=>DrawerDesign('thumbs-up-outline','Follow us on social media')}}/> 
       <Drawer.Screen name='Feedback' component={Feedback} options={{drawerIcon:()=>DrawerDesign('newspaper-outline','Feedback')}}/> 
       <Drawer.Screen name='More' component={More} options={{drawerIcon:()=>DrawerDesign('ellipsis-vertical','More')}}/> 
@@ -115,7 +115,7 @@ function MainStackNavigation(){
       <Stack.Screen name='AddCash' component={AddCash}/>
       <Stack.Screen name='PaymentGateway' component={PaymentGateway}/>
       <Stack.Screen name='Transactions' component={Transactions}/>
-      <Stack.Screen name='SetCreator' component={SetCreator} options={{detachPreviousScreen:'true',presentation:'modal'}}/>
+      <Stack.Screen name='SetCreator' component={SetCreator}/>
       {/* <Stack.Screen name='ContestDetailLeaderboard' component={ContestDetailLeaderboard} options={{animation:'fade'}}/> */}
       {/* <Stack.Screen name='LiveLeaderboard' component={LiveLeaderboard} options={{animation:'fade'}}/> */}
       {/* <Stack.Screen name='ScreenForMyContestTabNavigator' component={ScreenForMyContestTabNavigator} options={{animation:'fade'}}/> */}
@@ -127,7 +127,7 @@ function MainStackNavigation(){
       <Stack.Screen name='WebViewRules' component={WebViewForRules} options={{animation:'fade'}}/>
       
       <Stack.Screen name='BallEdit' component={BallEditPage}/>
-      <Stack.Screen name='BallViewCompleted' component={BallViewCompleted}/>
+      {/* <Stack.Screen name='BallViewCompleted' component={BallViewCompleted}/> */}
       <Stack.Screen name='HelpAndSupport' component={HelpAndSuppport}/>
 
     </Stack.Navigator>

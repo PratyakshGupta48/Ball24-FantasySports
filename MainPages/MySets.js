@@ -11,6 +11,7 @@ import BallView from './MainTabPages/MyContests/BallViewPage';
 import SkeletonContent from '../SkeletonPlaceholder';
 import auth from '@react-native-firebase/auth';
 
+const snapPoint = 50000/height+'%';
 if (Platform.OS === 'android')UIManager.setLayoutAnimationEnabledExperimental(true);
 const customLayoutAnimation = {
   duration: 250,
@@ -80,11 +81,8 @@ export default function MySets({navigation}) {
           })
           const transformedData = await Promise.all(setObjPromises);
           setSetsData(transformedData);
-          setLoadingSpinner(false)
         }
-        else{
-          setLoadingSpinner(false)
-        }
+        setLoadingSpinner(false)
       });
   
       const unsubscribe2 = firestore().collection('AllMatches').doc(MatchId).collection('4oversContests').onSnapshot((querySnapshot) => {
@@ -93,7 +91,7 @@ export default function MySets({navigation}) {
             const contestData = change.doc.data();
             if (contestData.ContestStatus === 'Live') {
               setRefresh(!refresh)
-              sheetRef1.current?.close()
+              sheetRef2.current?.close()
             }
           }
         });
@@ -104,53 +102,54 @@ export default function MySets({navigation}) {
   // )
 
   const RenderItem = useCallback(({item})=>{
-    const Set = item.Set;
+    const { Set, Name, Lock } = item;
+    const handlePress = () => {
+      setUserSetName(Name);
+      setUserSet(Set);
+      setTotalRuns(totalRuns);
+      setLockStatus(Lock);
+      openBottomSheet1();
+    };
     const totalRuns = Set.reduce((acc, val) => acc + (isNaN(parseInt(val)) ? 0 : parseInt(val[0])), 0)
     let i = 0;
-    return <TouchableWithoutFeedback onPress={()=>{
-      setUserSetName(item.Name)
-      setUserSet(item.Set)
-      setTotalRuns(totalRuns)
-      setLockStatus(item.Lock)
-      openBottomSheet1()
-    }}>
-      {/* <View style={[styles.BackgroundImage,{backgroundColor:'black'}]}> */}
+    return <TouchableWithoutFeedback onPress={handlePress}>
     <ImageBackground source={require('../accessories/DreamBallLogos/bannernew.jpg')} borderRadius={5} style={styles.BackgroundImage} elevation={10} >
       <View style={styles.AccessoriesContainer}>
         <View style={styles.NameSetNameContainer}>
           <Text style={styles.NameText}>{name.length>10?name.substring(0,10)+'...':name}</Text>
-          <Text style={styles.SetNameText}>{'('+item.Name+')'}</Text>
+          <Text style={styles.SetNameText}>{'('+Name+')'}</Text>
         </View>
         {mode!='Completed' && <View style={styles.IconContainer}>
-          <Icon name='fullscreen' size={20} color='#dedede' style={{paddingRight:10}} onPress={() => {
-            setUserSetName(item.Name)
-            setUserSet(item.Set)
-            setTotalRuns(totalRuns)
-            setLockStatus(item.Lock)
-            openBottomSheet1()
-          }}/>
-          {item.Lock===false && <Icon name='pencil-outline' size={20} color='#dedede' onPress={()=>{navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,uid:uid,I1:I1,I2:I2,SetName:item.Name})}}/>}
-          {item.Lock===true &&<Tooltip popover={<Text style={styles.ToolTipText}>This set cannot be edited because you have used it to participate in a contest that is now live.</Text>} backgroundColor='#1141c1' height={80} width={250} ><Icon name='lock-outline' size={20} color='#dedede' /></Tooltip>}
+          <Icon name='fullscreen' size={20} color='#dedede' style={{paddingRight:10}} onPress={handlePress}/>
+          {!Lock && <Icon name='pencil-outline' size={20} color='#dedede' onPress={()=>{navigation.navigate('BallEdit',{MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,uid:uid,I1:I1,I2:I2,SetName:Name})}}/>}
+          {Lock &&<Tooltip popover={<Text style={styles.ToolTipText}>This set cannot be edited because you have used it to participate in a contest that is now live.</Text>} backgroundColor='#1141c1' height={80} width={250} ><Icon name='lock-outline' size={20} color='#dedede' /></Tooltip>}
           {/* <Icon name='share-variant-outline' size={20} color='#dedede' style={{paddingLeft:10}}/> */}
         </View>}
       </View>
       <View style={styles.SetMainContainer}>
         <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} style={{marginHorizontal:12,marginVertical:12}}>
-          {Set.map((n,index) => (
-            <View key={index} style={[styles.TabPattiItemContainer2,{backgroundColor:colors[n]}]}>
-              {!skip.includes(n) && <Text style={styles.BallNumberingText0}>{(++i)}</Text>}
-              <Text style={styles.TabPattiText2}>{n}</Text>
-            </View>
-          ))}
+          {Set.map((n,index) => {
+            const item = !n.toString().endsWith('#') && !n.toString().endsWith('*') ? n : n.slice(0, -1);
+            const backgroundColor = colors[item];
+            const multiplierText = n.toString().endsWith('#') ? '2X' : (n.toString().endsWith('*') ? '1.5X' : '');
+            return (
+              <View key={index}>
+                <View style={[styles.TabPattiItemContainer2, {backgroundColor}]}>
+                  {!skip.includes(item) && <Text style={styles.BallNumberingText0}>{(++i)}</Text>}
+                  <Text style={styles.TabPattiText2}>{item}</Text>
+                </View>
+                <Text style={styles.MultiplierText}>{multiplierText}</Text>
+              </View>
+            );
+          })}
         </ScrollView>
         <View style={styles.ExtraDetContainer}>
           <Text style={styles.ExtraDetHeadText}>Total Runs: </Text>
           <Text style={[styles.ExtraDetAnsText,{paddingRight:15}]}>{totalRuns}</Text>
           <Text style={[styles.ExtraDetHeadText,{paddingLeft:15}]}>Boundaries: </Text>  
-          <Text style={styles.ExtraDetAnsText}>{`${Set.filter(item => item === '6' || item === '4').length} (${Set.filter(item => item === '4' || item === '6').join(',')})`}</Text>      
+          <Text style={styles.ExtraDetAnsText}>{`${Set.filter((item) =>['6', '4', '6#', '6*', '4#', '6*'].includes(item)).length} (${Set.filter((item) =>['4', '6', '6#', '6*', '4#', '6*'].includes(item)).join(',')})`}</Text>
         </View> 
       </View>
-      {/* </View> */}
     </ImageBackground>
     </TouchableWithoutFeedback>
   },[])
@@ -180,7 +179,7 @@ export default function MySets({navigation}) {
       </View></TouchableWithoutFeedback>}
       <BottomSheetModal
         ref={sheetRef2}
-        snapPoints={[userSet.length>Math.floor((width-34)/45)?55400/height+'%':47500/height+'%']}
+        snapPoints={[snapPoint]}
         enablePanDownToClose={true}
         enableOverDrag={true}
         backdropComponent={renderBackdrop}
@@ -194,118 +193,123 @@ export default function MySets({navigation}) {
 }
 
 const styles = StyleSheet.create({
-  MainCardContainer:{
-    backgroundColor:'#ffffff',
-    marginBottom:20,
-    elevation:4,
-    marginHorizontal:12,
-    paddingHorizontal:10,
-    borderRadius:5,
-    paddingVertical:8
+  MainCardContainer: {
+    backgroundColor: '#ffffff',
+    marginBottom: 20,
+    elevation: 4,
+    marginHorizontal: 12,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    paddingVertical: 8,
   },
-  IconContainer:{
-    flexDirection:'row',
-    justifyContent:'flex-end',
-    alignItems:'center',
+  IconContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  ToolTipText:{
-    color:'#ffffff',
-    fontFamily:'Poppins-Regular',
-    fontSize:13
+  ToolTipText: {
+    color: '#ffffff',
+    fontFamily: 'Poppins-Regular',
+    fontSize: 13,
   },
-  NextButtonContainerFinal:{
-    position:'absolute',
-    bottom:20,
-    flexDirection:'row',
-    alignItems:'center',
-    justifyContent:'center',
-    backgroundColor:'#363636',
-    alignSelf:'center',
-    borderRadius:20,
-    paddingHorizontal:20,
-    paddingVertical:3,
-    borderWidth:0.19,
-    borderColor:'#ffffff'
-},
-NextButtonText:{
-    color:'#ffffff',
-    fontFamily:'Poppins-Medium',
-    marginTop:3,
-    fontSize:13
-},
-TabPattiItemContainer2:{
-  minWidth:37,
-  height: 28,
-  alignItems:'center',
-  justifyContent:'center',
-  marginHorizontal:1,
-  borderRadius:4,
-},
-TabPattiText2:{
-  color:'#f6f7fb',
-  fontFamily:'Poppins-SemiBold',
-  fontSize:14,
-},
-BallNumberingText0:{
-  fontFamily:'Poppins-Medium',
-  fontSize:7,
-  position:'absolute',
-  bottom:16.8,
-  right:31,
-  color:'#f6f7fb'
-},
-
-BackgroundImage:{
-  marginBottom:25,
-  marginHorizontal:15,
-  borderWidth:4,
-  borderColor:'#ffffff',
-  borderRadius:8,
-  elevation:4,
-},
-AccessoriesContainer:{
-  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  flexDirection:'row',
-  alignItems:'center',
-  justifyContent:'space-between',
-  overlayColor:'#9c9c9c',
-  paddingVertical:7,
-  paddingHorizontal:12,
-  borderRadius:8
-},
-NameSetNameContainer:{
-  flexDirection:'row',
-  alignItems:'center',
-},
-NameText:{
-  color:'#dedede',
-  fontFamily:'Poppins-Medium',
-  fontSize:14
-},
-SetNameText:{
-  color:'#dedede',
-  fontFamily:'Poppins-Medium',
-  fontSize:13,
-  paddingLeft:9
-},
-SetMainContainer:{
-  alignItems:'center',
-  paddingTop:6
-},
-ExtraDetContainer:{
-  flexDirection:'row',
-  alignItems:'center',
-  paddingTop:12,
-  paddingBottom:6
-},
-ExtraDetHeadText:{
-  color:'#dedede',
-  fontFamily:'Poppins-Regular',
-  fontSize:13
-},
-ExtraDetAnsText:{
-  color:'#dedede',
-  fontFamily:'Poppins-SemiBold',
-  fontSize:14
-}
-})
+  NextButtonContainerFinal: {
+    position: 'absolute',
+    bottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#363636',
+    alignSelf: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 3,
+    borderWidth: 0.19,
+    borderColor: '#ffffff',
+  },
+  NextButtonText: {
+    color: '#ffffff',
+    fontFamily: 'Poppins-Medium',
+    marginTop: 3,
+    fontSize: 13,
+  },
+  TabPattiItemContainer2: {
+    minWidth: 37,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 1,
+    borderRadius: 4,
+  },
+  TabPattiText2: {
+    color: '#f6f7fb',
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 14,
+  },
+  BallNumberingText0: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 7,
+    position: 'absolute',
+    bottom: 16.8,
+    right: 31,
+    color: '#f6f7fb',
+  },
+  BackgroundImage: {
+    marginBottom: 25,
+    marginHorizontal: 15,
+    borderWidth: 4,
+    borderColor: '#ffffff',
+    borderRadius: 8,
+    elevation: 4,
+  },
+  AccessoriesContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    overlayColor: '#9c9c9c',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  NameSetNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  NameText: {
+    color: '#dedede',
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+  },
+  SetNameText: {
+    color: '#dedede',
+    fontFamily: 'Poppins-Medium',
+    fontSize: 13,
+    paddingLeft: 9,
+  },
+  SetMainContainer: {
+    alignItems: 'center',
+    paddingTop: 6,
+  },
+  ExtraDetContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  ExtraDetHeadText: {
+    color: '#dedede',
+    fontFamily: 'Poppins-Regular',
+    fontSize: 13,
+  },
+  ExtraDetAnsText: {
+    color: '#dedede',
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 14,
+  },
+  MultiplierText: {
+    fontFamily: 'Poppins-Medium',
+    textAlign: 'center',
+    fontSize: 11,
+    color: '#fafcff',
+  },
+});
