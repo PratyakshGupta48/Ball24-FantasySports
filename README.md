@@ -51,7 +51,7 @@ Ball24 is a project I undertook as a way to challenge myself to see if I could b
 - Seamless user experience
 - Secure and efficient financial transactions
 
-I built Ball24 using React Native, Redux, Node JS, and Firebase. Created solely by me, Pratyaksh Gupta, I am passionate about bringing the best ui/ux experience to enthusiasts worldwide.
+I built Ball24 using React Native, Redux, Node JS, and Firebase. Created solely by me, <b>Pratyaksh Gupta</b>, I am passionate about bringing the best ui/ux experience to enthusiasts worldwide.
 
 Follow me on LinkedIn - https://www.linkedin.com/in/pratyakshgupta48/ 😊
 
