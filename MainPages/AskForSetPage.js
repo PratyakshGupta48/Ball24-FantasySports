@@ -140,8 +140,8 @@ export default function AskForSetPage({navigation}) {
           onRefresh={()=>setRefresh(!refresh)} 
           refreshing={false}
           renderItem={renderItem}  
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
+          initialNumToRender={7}
+          maxToRenderPerBatch={7}
           keyExtractor={(item) => item.Name}
         />
         <Text onPress={()=>{if(selectedItemIndices.length>0){handlePresentModalPress();setIsPriceModalFixed(false);}}} style={selectedItemIndices.length>0 ? [styles.NextButtonContainer,{backgroundColor:'#009e00'}] : styles.NextButtonContainer}>CONFIRM</Text>
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    maxHeight: height - 205,
+    maxHeight: height - 320,
   },
   UseDefaultText: {
     color: '#737373',

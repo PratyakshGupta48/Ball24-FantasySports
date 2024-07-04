@@ -473,42 +473,4 @@ const styles = StyleSheet.create({
     width:60,
     height:40
   },
-  TeamLogoOne:{
-    width:33,
-    height:33
-  },
-  LSTeamName:{
-    color:'#a4a4a4',
-    fontFamily:'Poppins-Medium',
-    fontSize:11.5,
-    letterSpacing:-0.3
-  },
-  LSImageScoreContainer:{
-    flexDirection:'row',
-    alignItems:'center',
-  },
-  ScoreDataCurrentText:{
-    color:'#ababab',
-    fontFamily:'Poppins-SemiBold',
-    fontSize:18,
-    marginTop:3
-  },
-  LSOverText:{
-    color:'#a4a4a4',
-    fontFamily:'Poppins-Medium',
-    fontSize:12,
-    marginTop:3
-  },
-  LSStatusText:{
-    color:'#fafbff',
-    fontFamily:'Poppins-SemiBold',
-    fontSize:12
-  },
-  LSConclusionText:{
-    color:'#fafbff',
-    fontFamily:'Poppins-Regular',
-    alignSelf:'center',
-    fontSize:12,
-    paddingBottom:5
-  },
 })

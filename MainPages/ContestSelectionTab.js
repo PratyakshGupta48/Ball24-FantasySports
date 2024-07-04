@@ -22,7 +22,7 @@ const customLayoutAnimation = {
 
 export default function ContestSelectionTab({navigation}) {
 
-  const {MatchId,uid,Team1,Team2,TeamCode1,TeamCode2,I1,I2,MatchLink} = useRoute().params;
+  const {MatchId,uid,Team1,Team2,TeamCode1,TeamCode2,I1,I2,CurrentInning} = useRoute().params;
   const [refresh,setRefresh] = useState(false);
   const [fourOvers,setFourOvers] = useState([]);
   const [fouroversCopy,setFourOversCopy] = useState([]);
@@ -114,7 +114,7 @@ export default function ContestSelectionTab({navigation}) {
   // )
 
   const CardFormat = useCallback(({item}) => (
-    <TouchableWithoutFeedback onPress={()=>{navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.key,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDetails',Inning:item.Inning})}} style={{backgroundColor:'#ffffff'}}>
+    <TouchableWithoutFeedback onPress={()=>{navigation.navigate('ContestDetailNavigation',{Team1,Team2,MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid,TeamCode1,TeamCode2,MatchKey:item.key,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1,I2,Free:item.Free,initialScreen:'ContestDetails',Inning:item.Inning,CurrentInning})}} style={{backgroundColor:'#ffffff'}}>
       <View style={styles.Card} elevation={3}> 
         <View style={styles.PrizeEntryTextContainer}>
           <Text style={styles.PrizeText}>Prize Pool</Text>
@@ -131,7 +131,7 @@ export default function ContestSelectionTab({navigation}) {
             <Text style={styles.Rupee}>₹</Text>
             <Text style={styles.PrizeMoneyText}>{item.PrizePool}</Text>
           </View>
-          <Text style={styles.EntryMoneyText} onPress={()=>{navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.key,ContestType:item.Type,Entry:item.Entry,Overs:item.Overs,uid:uid,PrizePool:item.PrizePool,MaximumSpots:item.MaximumSpots,I1:I1,I2:I2,WinnersPercentage:item.WinnersPercentage,Winning:item.Winnings,MatchLink:MatchLink,Free:item.Free,initialScreen:'AskForSet',Inning:item.Inning,m:'U'})}}>
+          <Text style={styles.EntryMoneyText} onPress={()=>{navigation.navigate('ContestDetailNavigation',{Team1,Team2,MatchId,TeamCode1,TeamCode2,MatchKey:item.key,ContestType:item.Type,Entry:item.Entry,Overs:item.Overs,uid,PrizePool:item.PrizePool,MaximumSpots:item.MaximumSpots,I1,I2,WinnersPercentage:item.WinnersPercentage,Winning:item.Winnings,Free:item.Free,initialScreen:'AskForSet',Inning:item.Inning,m:'U',CurrentInning})}}>
             {(item.Free==true && (item.MaximumSpots-item.FilledSpots)>0)?((!newUser)?'Free':item.Entry) : ((item.Free!='true' && item.Entry) || (item.Type=='Mega Contest' && (item.MaximumSpots-item.FilledSpots)==0 && 'Full')) }
           </Text>
         </View>

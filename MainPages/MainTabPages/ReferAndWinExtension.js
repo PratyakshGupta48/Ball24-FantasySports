@@ -12,7 +12,7 @@ export default function Transactions({navigation}) {
   const [refresh,setRefresh] = useState(false);
   const uid = auth().currentUser.uid;
   const prizeImage = {
-    10:require('../../accessories/ReferImages/ball24.png'),
+    10:require('../../accessories/ReferImages/cpy2.png'),
     25:require('../../accessories/ReferImages/swiggy.png'),
     100:require('../../accessories/ReferImages/hoodb.png'),
     250:require('../../accessories/ReferImages/prime.png'),

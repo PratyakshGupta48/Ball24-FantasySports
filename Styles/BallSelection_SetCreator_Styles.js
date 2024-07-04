@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
   BallsLeftBallsText: {
     fontFamily: 'Poppins-Medium',
     fontSize: 13,
+    color:'#ababab'
   },
   BallsLeftBallsMainText: {
     fontFamily: 'Poppins-SemiBold',

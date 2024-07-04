@@ -81,7 +81,7 @@ export default function Withdraw({navigation}) {
           let index;
           await firestore().collection('users').doc(uid).get().then(documentSnapshot=> index = (documentSnapshot.data().Transactions).length)
           let Withdraw = functions().httpsCallable('Withdraw')
-          Withdraw({Email:email,Amount:input,tds:netWinning>0?0.3*netWinning:0,netWinning:netWinning,pan:panCard,OriginalName:OriginalName,uid:uid,mode:isItemSelected=='U'?upi:'*'.repeat(bankDetails.AccountNumber.length - 4) + bankDetails.AccountNumber.slice(-4),AccountNumber:bankDetails?bankDetails.AccountNumber:null,IFSC:bankDetails?bankDetails.IfscCode:null,Name:bankDetails?bankDetails.AccountHolder:"",upi:upi,To:isItemSelected=='U'?'upi':'bank',index:index}).then(()=>{
+          Withdraw({Email:email,Amount:input,tds:(netWinning>0?0.3*netWinning:0).toFixed(2),netWinning:netWinning.toFixed(2),pan:panCard,OriginalName:OriginalName,uid:uid,mode:isItemSelected=='U'?upi:'*'.repeat(bankDetails.AccountNumber.length - 4) + bankDetails.AccountNumber.slice(-4),AccountNumber:bankDetails?bankDetails.AccountNumber:null,IFSC:bankDetails?bankDetails.IfscCode:null,Name:bankDetails?bankDetails.AccountHolder:"",upi:upi,To:isItemSelected=='U'?'upi':'bank',index:index}).then(()=>{
             setSpinner(false)
             handleClosePress()
             showToast('success','Withdrawal Successful','You can check status from Transaction section')
@@ -98,7 +98,7 @@ export default function Withdraw({navigation}) {
 
     return (
       <View style={styles.TDSBottomSheetContainer}>
-        <Text style={styles.TDSWithdrawAmt}>{'₹'+(inputValue.substring(1)-(netWinning>0?0.3*netWinning:0))}</Text>
+        <Text style={styles.TDSWithdrawAmt}>{'₹'+(inputValue.substring(1)-(netWinning>0?0.3*netWinning:0)).toFixed(2)}</Text>
         <Text style={styles.TDSWithdrawText}>Withdraw (After TDS)</Text>
         <View style={{flexDirection:'column',borderTopEndRadius:30,borderTopStartRadius:30,backgroundColor:'#ffffff',paddingTop:20}}>
           <View style={styles.TDSSubContainers}>
@@ -110,13 +110,13 @@ export default function Withdraw({navigation}) {
             <Image source={require('../../accessories/DreamBallLogos/satya.png')} style={{width:25,height:39.08}}></Image>
             <Text style={styles.TDSTexts}>  TDS Applicable</Text>
             </View>
-            <Text style={[styles.TDSAmountsTexts,{color:'#cf4f15'}]}>{'₹'+(netWinning>0?0.3*netWinning:0)}</Text>
+            <Text style={[styles.TDSAmountsTexts,{color:'#cf4f15'}]}>{'₹'+(netWinning>0?0.3*netWinning:0).toFixed(2)}</Text>
           </View>
 
           <View style={styles.GSTDetailsContainer}>
             <TouchableOpacity onPress={()=>{setExpanded(!expanded)}} style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}} activeOpacity={0.8}>
               <Text style={[styles.GSTText,{fontFamily:'Poppins-Medium'}]}>See how TDS is calculated</Text>
-              <Text style={[styles.GSTText,{fontSize:13,fontWeight:'600'}]}>{'₹'+(netWinning>0?0.3*netWinning:0)+'   '}{expanded ?<Icon name='chevron-up-circle-outline' size={14} color='#3b4d73'/>: <Icon name='chevron-down-circle-outline' size={14} color='#3b4d73'/>}</Text>
+              <Text style={[styles.GSTText,{fontSize:13,fontWeight:'600'}]}>{'₹'+(netWinning>0?0.3*netWinning:0).toFixed(2)+'   '}{expanded ?<Icon name='chevron-up-circle-outline' size={14} color='#3b4d73'/>: <Icon name='chevron-down-circle-outline' size={14} color='#3b4d73'/>}</Text>
             </TouchableOpacity>
             {expanded && (<>
               <View style={styles.Seperator}></View>
@@ -170,7 +170,7 @@ export default function Withdraw({navigation}) {
                   <Text style={[styles.GSTText,{color:'#242424',fontFamily:'Poppins-Regular'}]}>TDS   </Text>
                   <Text style={{color:'#3b4d73',backgroundColor:'#f0f7ff',borderRadius:4,paddingHorizontal:7}}>[ 30% of Net Winnings ]</Text>
                 </View>
-                <Text style={[styles.GSTText2,{color:'#cf4f15'}]}>{'₹'+(netWinning>0?0.3*netWinning:0)}</Text>
+                <Text style={[styles.GSTText2,{color:'#cf4f15'}]}>{'₹'+(netWinning>0?0.3*netWinning:0).toFixed(2)}</Text>
               </View>
               </>
             )}
@@ -181,7 +181,7 @@ export default function Withdraw({navigation}) {
             <Image source={isItemSelected=='U'?require('../../accessories/DreamBallLogos/upilogo.png'):require('../../accessories/DreamBallLogos/banklogo.png')} style={{width:isItemSelected=='U'?60:35,height:isItemSelected=='U'?16.22:35}}></Image>
             <Text style={styles.TDSTexts}>  Withdraw (After TDS)</Text>
             </View>
-            <Text style={[styles.TDSAmountsTexts,{color:'#109e38'}]}>{'₹'+(inputValue.substring(1)-(netWinning>0?0.3*netWinning:0))}</Text>
+            <Text style={[styles.TDSAmountsTexts,{color:'#109e38'}]}>{'₹'+(inputValue.substring(1)-(netWinning>0?0.3*netWinning:0)).toFixed(2)}</Text>
           </View>
           {spinner?<ActivityIndicator color={'#1141c1'} size={'small'}/>:<Text style={[styles.AddButtonText,{backgroundColor:'#109e38'}]} onPress={handleConfirm}>Confirm</Text>}
         </View>

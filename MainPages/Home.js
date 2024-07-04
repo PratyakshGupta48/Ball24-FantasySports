@@ -20,7 +20,7 @@ export default function Home({navigation}) {
   const [loadingSpinner,setLoadingSpinner] = useState(true);
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun','Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const delay = (timeout) => new Promise(resolve => setTimeout(resolve, timeout));
-  
+
   useFocusEffect(
     useCallback(()=>{
       requestPermission();
@@ -35,6 +35,14 @@ export default function Home({navigation}) {
               key: documentSnapshot.id
             });
         });
+  
+        // Sorting the matchList based on id
+        matchList.sort((a, b) => {
+          const idA = parseInt(a.key.replace('Match', ''));
+          const idB = parseInt(b.key.replace('Match', ''));
+          return idA - idB;
+        });
+  
         setMatchList(matchList);
         setLoadingSpinner(false);
         changeNavigationBarColor('#ffffff')
@@ -42,6 +50,7 @@ export default function Home({navigation}) {
       return () => unsubscribe;
     },[refresh])
   )
+  
 
   const data = [
   // {
@@ -66,12 +75,13 @@ export default function Home({navigation}) {
   const TimeLeftComponent = useCallback(({milliseconds})=>{
     const now = new Date();
     const futureDate = new Date(milliseconds);
-    const [DateComparasion, setDateComparasion] = useState(Math.floor((milliseconds-now.getTime())/(1000*60*60*24)));
+    // const [DateComparasion, setDateComparasion] = useState(Math.floor((milliseconds-now.getTime())/(1000*60*60*24)));
+    const [DateComparasion, setDateComparasion] = useState( new Date(milliseconds).getDate()-now.getDate());
     const [ctr,setCtr] = useState(0);
     useEffect(() => {
       const now = new Date();
       const intervalId = setInterval(() => {
-        setDateComparasion(Math.floor((milliseconds-now.getTime())/(1000*60*60*24)));
+        setDateComparasion(new Date(milliseconds).getDate()-now.getDate())
         setCtr(ctr+1)
       }, 1000);
       return () => clearInterval(intervalId);
@@ -112,7 +122,7 @@ export default function Home({navigation}) {
   [])
 
   const RenderItem = useCallback(({item}) =>(
-    <TouchableNativeFeedback onPress={()=>{navigation.navigate('ContestSelection',{Team1:item.Team1,Team2:item.Team2,TeamCode1:item.TeamCode1,TeamCode2:item.TeamCode2,MatchId:item.MatchId,uid:uid,I1:item.Image1,I2:item.Image2,MatchLink:item.MatchLink})}}>
+    <TouchableNativeFeedback onPress={()=>{navigation.navigate('ContestSelection',{Team1:item.Team1,Team2:item.Team2,TeamCode1:item.TeamCode1,TeamCode2:item.TeamCode2,MatchId:item.MatchId,uid:uid,I1:item.Image1,I2:item.Image2,CurrentInning:item.CurrentInning})}}>
       <View style={styles.MainCardContainer} elevation={2}>
         <View style={styles.LeagueNameContainer}>
           <LinearGradient colors={['#edf5ff','#ffffff']} start={{ x: 0, y: 0 }} end={{ x: 0.5, y: 0 }} style={{borderTopLeftRadius:12,overflow:'hidden'}}>
@@ -126,7 +136,7 @@ export default function Home({navigation}) {
         </View>
         <View style={styles.TeamLogoContainer}>
           <View style={[styles.TeamLogoOneContainer,{marginLeft:10,}]}>
-            <FastImage source={{uri:item.Image1,priority: FastImage.priority.normal}} style={styles.TeamLogoOne}/>
+            <FastImage source={{uri:item.Image1,priority: FastImage.priority.normal}} style={styles.TeamLogoOne} resizeMode='contain'/>
             <FastImage source={{uri:item.Image1,priority: FastImage.priority.normal}} style={[styles.TeamLogoOneShadow,{right:48}]}/>
             <Text style={styles.TeamOneCode}>{item.TeamCode1}</Text>
           </View>
@@ -135,10 +145,11 @@ export default function Home({navigation}) {
             <GetTime matchEndTime = {(item.MatchTime).toMillis()}/>
           </View>}
           {item.Status=='Live' && <Text style={styles.LiveText}>• Live</Text>}
+          
           <View style={[styles.TeamLogoOneContainer,{marginRight:10,}]}>
             <Text style={styles.TeamOneCode}>{item.TeamCode2}</Text>
             <FastImage source={{uri:item.Image2,priority: FastImage.priority.normal}} style={[styles.TeamLogoOneShadow,{left:48}]}/>
-            <FastImage source={{uri:item.Image2,priority: FastImage.priority.normal}} style={styles.TeamLogoOne}/>
+            <FastImage source={{uri:item.Image2,priority: FastImage.priority.normal}} style={styles.TeamLogoOne} resizeMode='contain'/>
           </View>
         </View>
         <View style={styles.Seperator2}></View>
@@ -170,7 +181,7 @@ export default function Home({navigation}) {
         style={{height:height}}
         removeClippedSubviews={true}
         ItemSeparatorComponent={()=><View style={{height:19}}></View>}
-        getItemLayout={(data, index) => ({length: 140.36363220214844 + 19, offset: (140.36363220214844 + 19) * index + 19, index})}
+        getItemLayout={(_, index) => ({length: 140.36363220214844 + 19, offset: (140.36363220214844 + 19) * index + 19, index})}
       />}
     </LinearGradient>
   </>
@@ -245,8 +256,9 @@ const styles=StyleSheet.create({
     paddingBottom:10
   },
   TeamLogoOne:{
-    height:33,
-    width:33,
+    height:40,
+    // width:40,
+    aspectRatio:1/1.2,
     zIndex:2
   } ,
   TeamLogoOneShadow:{

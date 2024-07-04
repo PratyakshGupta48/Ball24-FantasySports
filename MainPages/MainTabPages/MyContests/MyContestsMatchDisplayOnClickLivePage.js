@@ -27,7 +27,7 @@ const customLayoutAnimation = {
 
 export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
 
-  const {TeamCode1,TeamCode2,Team1,Team2,MatchId,I1,I2,MatchLink} = useRoute().params;
+  const {TeamCode1,TeamCode2,Team1,Team2,MatchId,I1,I2,CurrentInning} = useRoute().params;
   const user = auth().currentUser;
   const uid = user.uid;
   const Name = user.displayName
@@ -181,7 +181,7 @@ export default function MyContestsMatchDisplayOnClickLivePage({navigation}) {
 
   const RenderItem = ({item,index}) => {
     const isItemSelected = selectedItemIndex === index; 
-    const navigationLeaderboard = () => navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.DocumentId,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,MatchLink:MatchLink,Free:item.Free,initialScreen:'ContestDetails',Inning:item.Inning})
+    const navigationLeaderboard = () => navigation.navigate('ContestDetailNavigation',{Team1:Team1,Team2:Team2,MatchId:MatchId,Overs:item.Overs,ContestType:item.Type,PrizePool:item.PrizePool,Entry:item.Entry,uid:uid,TeamCode1:TeamCode1,TeamCode2:TeamCode2,MatchKey:item.DocumentId,MaximumSpots:item.MaximumSpots,FirstPosition:item.FirstPosition,WinnersPercentage:item.WinnersPercentage,Winnings:item.Winning,I1:I1,I2:I2,Free:item.Free,initialScreen:'ContestDetails',Inning:item.Inning,CurrentInning})
     return(
       <View style={styles.Card}>
         <TouchableWithoutFeedback onPress={navigationLeaderboard} style={{backgroundColor:'transparent'}}><View>

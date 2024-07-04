@@ -38,7 +38,7 @@ export default function BallEditPage({navigation}) {
   const [bonusBall,setBonusBall] = useState([]);
   const [loadingSpinner,setLoadingSpinner] = useState(true);
   const [scores, setScores] = useState([]);
-  const [copy,setCopy] = useState([])
+  // const [copy,setCopy] = useState([])
 
   const colors = {null:'#ffffff',"0":'#006269',"1":'#006269',"2":'#006269',"3":'#006269',"4":'#1e8e3e',"5":'#006269',"6":'#1e8e3e',"1WD":'#185ccc',"1NB":'#185ccc',"2NB":'#185ccc',"3NB":'#185ccc',"4NB":'#185ccc',"5NB":'#185ccc',"7NB":'#185ccc',"W":'#d93025'}
   const skip = ["1WD","1NB","2NB","3NB","4NB","5NB","7NB"];

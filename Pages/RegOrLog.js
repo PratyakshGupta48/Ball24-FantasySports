@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ImageBackground, StatusBar, Dimensions, Image } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import CodePush from 'react-native-code-push'; 
-import LinearGradient from 'react-native-linear-gradient';
+// import LinearGradient from 'react-native-linear-gradient';
 import Carousel,{Pagination} from 'react-native-snap-carousel';
 import changeNavigationBarColor from 'react-native-navigation-bar-color';
 
@@ -35,18 +35,18 @@ function RegOrLog({ navigation }) {
         </View>
       </View>
     )},
-    {JSX:(
-      <View style={styles.CarouselContainer}>
-        <View style={{width:'100%'}}>
-          <Image source={require('../accessories/DreamBallLogos/smartmock1.png')} style={{width:'50%',height:undefined,aspectRatio:1174/1935,alignSelf:'center',marginTop:'15%'}} />
-          <LinearGradient colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 1)']} style={styles.gradient}/>
-        </View>
-        <View style={styles.WelcomeTextContainer}>
-          <Text style={styles.Exp11Text}>LIVE Predictions</Text>
-          <Text style={styles.Exp22Text}>Predict the scores of upcoming overs while you watch the match and enjoy big winnings.</Text>
-        </View>
-      </View>
-    )},
+    // {JSX:(
+    //   <View style={styles.CarouselContainer}>
+    //     <View style={{width:'100%'}}>
+    //       <Image source={require('../accessories/DreamBallLogos/smartmock1.png')} style={{width:'50%',height:undefined,aspectRatio:1174/1935,alignSelf:'center',marginTop:'15%'}} />
+    //       <LinearGradient colors={['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 1)']} style={styles.gradient}/>
+    //     </View>
+    //     <View style={styles.WelcomeTextContainer}>
+    //       <Text style={styles.Exp11Text}>LIVE Predictions</Text>
+    //       <Text style={styles.Exp22Text}>Predict the scores of upcoming overs while you watch the match and enjoy big winnings.</Text>
+    //     </View>
+    //   </View>
+    // )},
   ]
 
   return (<>
