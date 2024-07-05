@@ -1,5 +1,7 @@
 <img src="https://ball24.in/images/azxcvb.png" alt="Ball24 Logo" width="200" />
 
+# Ball24: Revolutionizing Fantasy Cricket
+
 Ball24 is not just another fantasy cricket platform; it's a revolution in the way you experience and engage with the sport you love. Traditional fantasy cricket is fun, but Ball24 takes it to a whole new level with real-time predictions per over, ensuring that every moment of the game counts.
 
 ## Key Features
@@ -22,8 +24,10 @@ Share the excitement with your friends and family. Refer them to Ball24, and you
 ### Hassle-Free Transactions
 We understand the importance of easy and secure financial transactions. That's why we offer multiple options, including UPI, IMPS, and direct bank transfers, to make adding and withdrawing money effortless.
 
-<img src="https://i.ibb.co/W3Mv8Ly/IMG-20240704-WA0004.jpg" alt="Hassle-Free Transactions" width="200" />
-<img src="https://i.ibb.co/pRk9mfG/IMG-20240704-WA0003.jpg" alt="Hassle-Free Transactions" width="200" />
+<div style="display: flex; justify-content: center;">
+  <img src="https://i.ibb.co/W3Mv8Ly/IMG-20240704-WA0004.jpg" alt="Hassle-Free Transactions" width="200" />
+  <img src="https://i.ibb.co/pRk9mfG/IMG-20240704-WA0003.jpg" alt="Hassle-Free Transactions" width="200" />
+</div>
 
 ## Website
 
@@ -33,11 +37,11 @@ We understand the importance of easy and secure financial transactions. That's w
 
 [Download the Android App](https://ball24.in/Apk/ball24.apk)
 
-## Video Tutorial
+## Video Walkthrough
 
 Watch this video to see how Ball24 works:
 
-<a href="https://gemootest.s3.us-east-2.amazonaws.com/s/res/514885813225336832/7d8d76b38008ce038287f56b06e4f1c1.mp4?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIARLZICB6QQHKRCV7K%2F20240704%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20240704T111251Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Signature=d4c688c2cbc8ea1e5351d2d5810f283acdf556e0ec416f30eedce0c685aa2dfd" target="_blank"> Video</a>
+[![Watch the video](https://i.ibb.co/yqsm7Hc/Screenshot-2024-07-06-021358.png)](https://youtu.be/vt5fpE0bzSY)
 
 ## About the Developer
 
@@ -51,8 +55,6 @@ Ball24 is a project I undertook as a way to challenge myself to see if I could b
 - Seamless user experience
 - Secure and efficient financial transactions
 
-I built Ball24 using React Native, Redux, Node JS, and Firebase. Created solely by me, <b>Pratyaksh Gupta</b>, I am passionate about bringing the best ui/ux experience to enthusiasts worldwide.
+I built Ball24 using React Native, Redux, Node JS, and Firebase. Created solely by me, **Pratyaksh Gupta**, I am passionate about bringing the best UI/UX experience to enthusiasts worldwide.
 
-Follow me on LinkedIn - https://www.linkedin.com/in/pratyakshgupta48/ 😊
-
----
+Follow me on [LinkedIn](https://www.linkedin.com/in/pratyakshgupta48/) 😊
