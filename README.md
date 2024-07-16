@@ -41,7 +41,7 @@ We understand the importance of easy and secure financial transactions. That's w
 
 Watch this video to see how Ball24 works:
 
-[![Watch the video](https://i.ibb.co/yqsm7Hc/Screenshot-2024-07-06-021358.png)](https://youtu.be/vt5fpE0bzSY)
+[![Watch the video](https://i.ibb.co/yqsm7Hc/Screenshot-2024-07-06-021358.png)](https://www.youtube.com/watch?v=5_dpnPNefmk)
 
 ## About the Developer
 
