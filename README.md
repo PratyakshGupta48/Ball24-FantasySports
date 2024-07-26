@@ -39,22 +39,10 @@ We understand the importance of easy and secure financial transactions. That's w
 
 ## Video Walkthrough
 
-Watch this video to see how Ball24 works:
+Watch this video to see walkthrough of the app:
 
-[![Watch the video](https://i.ibb.co/yqsm7Hc/Screenshot-2024-07-06-021358.png)](https://www.youtube.com/watch?v=5_dpnPNefmk)
+[![Watch the video](https://i.ibb.co/yqsm7Hc/Screenshot-2024-07-06-021358.png)](https://drive.google.com/file/d/1LrlR-sZ7iS787UJJzFn93dqxp_j8TwIu/view)
 
-## About the Developer
 
-Ball24 is a project I undertook as a way to challenge myself to see if I could build something as complex as a fantasy sports app. This project presented several difficult challenges, including:
 
-- Scalable architecture to handle a large number of concurrent users
-- Real-time contest fetching
-- User authentication
-- Fast data retrievals
-- Machine learning algorithms for predictions
-- Seamless user experience
-- Secure and efficient financial transactions
-
-I built Ball24 using React Native, Redux, Node JS, and Firebase. Created solely by me, **Pratyaksh Gupta**, I am passionate about bringing the best UI/UX experience to enthusiasts worldwide.
-
-Follow me on [LinkedIn](https://www.linkedin.com/in/pratyakshgupta48/) 😊
+Follow developer on [LinkedIn](https://www.linkedin.com/in/pratyakshgupta48/) 😊
